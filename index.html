@@ -166,11 +166,9 @@
 
     async function init() {
       setStickyOffset();
+      setupAutoHeightPostMessage();
 
-      if (!CSV_URL || CSV_URL.includes("PASTE_")) {
-        showError("CSV_URL is not set.");
-        return;
-      }
+      if (!CSV_URL) return showError("CSV_URL is not set.");
 
       const started = performance.now();
       let text;
@@ -187,7 +185,6 @@
 
       const parsed = parseCsv(text);
       const headersU = parsed.headers.map(normHeader);
-
       validateHeaders(headersU);
 
       all = parsed.rows
@@ -203,25 +200,43 @@
 
       wire();
       render();
+      postEmbedHeightSoon();
+    }
+
+    function setupAutoHeightPostMessage() {
+      if (!window.parent || window.parent === window) return;
+      const send = () => {
+        const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+        window.parent.postMessage({ type: "MYRECRUITS_EMBED_HEIGHT", height: h }, "*");
+      };
+      window.addEventListener("load", send);
+      const ro = new ResizeObserver(() => send());
+      ro.observe(document.documentElement);
+      setInterval(send, 1500);
+      window.__sendEmbedHeight = send;
+    }
+
+    function postEmbedHeightSoon() {
+      if (typeof window.__sendEmbedHeight === "function") setTimeout(() => window.__sendEmbedHeight(), 200);
     }
 
     function setStickyOffset() {
-      const h = els.header?.offsetHeight || 0;
-      document.documentElement.style.setProperty("--stickyOffset", `${h}px`);
-      window.addEventListener("resize", () => {
-        const hh = els.header?.offsetHeight || 0;
-        document.documentElement.style.setProperty("--stickyOffset", `${hh}px`);
-      });
+      const set = () => {
+        const h = els.header?.offsetHeight || 0;
+        document.documentElement.style.setProperty("--stickyOffset", `${h}px`);
+      };
+      set();
+      window.addEventListener("resize", set);
     }
 
     function wire() {
       ["input", "change"].forEach(evt => {
-        els.q.addEventListener(evt, render);
-        els.state.addEventListener(evt, render);
-        els.host.addEventListener(evt, render);
-        els.from.addEventListener(evt, render);
-        els.to.addEventListener(evt, render);
-        els.upcoming.addEventListener(evt, render);
+        els.q.addEventListener(evt, () => { render(); postEmbedHeightSoon(); });
+        els.state.addEventListener(evt, () => { render(); postEmbedHeightSoon(); });
+        els.host.addEventListener(evt, () => { render(); postEmbedHeightSoon(); });
+        els.from.addEventListener(evt, () => { render(); postEmbedHeightSoon(); });
+        els.to.addEventListener(evt, () => { render(); postEmbedHeightSoon(); });
+        els.upcoming.addEventListener(evt, () => { render(); postEmbedHeightSoon(); });
       });
     }
 
@@ -375,9 +390,7 @@
       return "";
     }
 
-    function normHeader(h) {
-      return String(h || "").trim().toUpperCase();
-    }
+    function normHeader(h) { return String(h || "").trim().toUpperCase(); }
 
     function parseCsv(text) {
       const rows = [];
@@ -412,7 +425,6 @@
     function toISODate(v) {
       const s = String(v || "").trim();
       if (!s) return "";
-
       if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
 
       const mdy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -443,9 +455,7 @@
       return dateFmt.format(d);
     }
 
-    function startOfDay(d) {
-      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    }
+    function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
 
     function buildCalendarLink(r) {
       const start = r._date;
@@ -476,10 +486,7 @@
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
     }
-
-    function escapeAttr(s) {
-      return escapeHtml(s).replaceAll("`", "&#096;");
-    }
+    function escapeAttr(s) { return escapeHtml(s).replaceAll("`", "&#096;"); }
   </script>
 </body>
 </html>
