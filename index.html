@@ -170,8 +170,13 @@
       font-size: 14px;
     }
 
-    /* Table */
-    .tableWrap { max-width: 1100px; margin: 0 auto; width: 100%; }
+    /* Table (FULL WIDTH) */
+    .tableWrap {
+      max-width: none;
+      width: 100%;
+      margin: 0;
+    }
+
     .tableScroll {
       background: #fff;
       border: 1px solid #eee;
@@ -182,6 +187,7 @@
       -webkit-overflow-scrolling: touch;
       width: 100%;
     }
+
     table { width: 100%; border-collapse: collapse; min-width: 900px; }
     th, td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; vertical-align: top; }
 
@@ -217,7 +223,7 @@
       font-weight: 700;
     }
 
-    #sentinel { height: 1px; width: 100%; max-width: 1100px; margin: 0 auto; }
+    #sentinel { height: 1px; width: 100%; margin: 0; }
   </style>
 </head>
 <body>
@@ -503,7 +509,7 @@
         if (av < bv) return -1 * dir;
         if (av > bv) return  1 * dir;
 
-        // Tie-breakers: date then name (stable)
+        // Tie-breakers: date then name
         const da = a._date instanceof Date ? a._date.getTime() : 0;
         const db = b._date instanceof Date ? b._date.getTime() : 0;
         if (da !== db) return da - db;
