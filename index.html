@@ -29,13 +29,13 @@
     .wrap { max-width: 1100px; margin: 0 auto; padding: 14px; }
     h1 { font-size: 18px; margin: 0 0 10px; }
 
-    /* Controls: never overlap */
+    /* ✅ FIX: controls never overlap (wide screens use safe fixed cols; smaller wraps cleanly) */
     .controls {
       display: grid;
       gap: 10px;
       align-items: end;
     }
-    .controls > * { min-width: 0; }
+    .controls > * { min-width: 0; } /* critical: prevents grid-item overflow */
     .controls label { display: block; font-size: 12px; color: #444; margin-bottom: 6px; }
     .controls input, .controls select {
       width: 100%;
@@ -63,46 +63,13 @@
       border-radius: 999px;
       background: #fff;
       font-size: 14px;
-      width: 100%;
+      width: 100%;              /* ✅ prevents pill overflow into neighbor */
       justify-content: flex-start;
-      user-select: none;
     }
     .pill input { width: 18px; height: 18px; flex: 0 0 auto; }
 
-    .metaRow {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #555; }
+    .meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: #555; }
     .badge { padding: 6px 10px; border-radius: 999px; background: #fff; border: 1px solid #eee; }
-
-    /* View toggle (Cards/Table) */
-    .viewToggle {
-      display: inline-flex;
-      border: 1px solid #ddd;
-      border-radius: 999px;
-      overflow: hidden;
-      background: #fff;
-    }
-    .viewToggle button {
-      border: 0;
-      background: transparent;
-      padding: 8px 12px;
-      font-weight: 800;
-      font-size: 12px;
-      cursor: pointer;
-      color: #333;
-      white-space: nowrap;
-    }
-    .viewToggle button.active {
-      background: #111;
-      color: #fff;
-    }
 
     main { padding: 18px 14px 40px; }
 
@@ -162,16 +129,20 @@
       font-size: 14px;
     }
 
-    /* Desktop table */
-    .tableWrap { max-width: 1100px; margin: 0 auto; }
+    .moreWrap { max-width: 1100px; margin: 14px auto 0; display: flex; justify-content: center; }
+    .loadMore { padding: 12px 14px; border-radius: 999px; border: 1px solid #ddd; background: #fff; font-weight: 800; cursor: pointer; }
 
+    /* Desktop table */
+    .tableWrap { max-width: 1100px; margin: 0 auto; display: none; }
+
+    /* ✅ FIX: make table scroll container; header sticks INSIDE container (no “row 2”) */
     .tableScroll {
       background: #fff;
       border: 1px solid #eee;
       border-radius: 16px;
       box-shadow: var(--shadow);
       overflow: auto;
-      max-height: calc(100vh - 280px);
+      max-height: calc(100vh - 260px);
     }
 
     table { width: 100%; border-collapse: collapse; }
@@ -182,24 +153,15 @@
       color: #444;
       background: #fbfbfb;
       position: sticky;
-      top: 0;
+      top: 0;         /* ✅ sticky relative to .tableScroll */
       z-index: 2;
     }
     tr:hover td { background: #fcfcfc; }
     a { color: inherit; }
 
-    /* View mode helpers */
-    .hidden { display: none !important; }
-
-    /* Sentinel */
-    #sentinel {
-      height: 1px;
-      width: 100%;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
     @media (min-width: 900px) {
+      .grid { display: none; }
+      .tableWrap { display: block; }
       h1 { font-size: 20px; }
     }
   </style>
@@ -244,16 +206,9 @@
         </div>
       </div>
 
-      <div class="metaRow">
-        <div class="meta">
-          <span class="badge" id="count">Loading…</span>
-          <span class="badge" id="updated"></span>
-        </div>
-
-        <div class="viewToggle" role="group" aria-label="View mode">
-          <button id="btnCards" type="button">Cards</button>
-          <button id="btnTable" type="button">Table</button>
-        </div>
+      <div class="meta">
+        <span class="badge" id="count">Loading…</span>
+        <span class="badge" id="updated"></span>
       </div>
     </div>
   </header>
@@ -261,7 +216,7 @@
   <main>
     <div class="grid" id="cards"></div>
 
-    <div class="tableWrap" id="tableWrap">
+    <div class="tableWrap">
       <div class="tableScroll">
         <table>
           <thead>
@@ -281,22 +236,15 @@
       </div>
     </div>
 
-    <div id="sentinel"></div>
+    <div class="moreWrap">
+      <button id="loadMore" class="loadMore" style="display:none;">Load more</button>
+    </div>
   </main>
 
   <script>
-    /**
-     * ✅ Paste your published CSV here.
-     * Your sheet should include at least:
-     * STATE, DATE, EVENT NAME, HOSTED BY, URL
-     * Optional:
-     * COST, DURATION, GRADES/AGE, APPROVED
-     */
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMvr__OkB3wgl4GvpZLJ61u_MfemESGiLBKEwufYFVwj_S7jiHFZraACGJRJogY6I29r17w34EGzVF/pub?gid=700608427&single=true&output=csv";
-
     const REQUIRED = ["STATE", "DATE", "EVENT NAME", "HOSTED BY", "URL"];
     const PAGE_SIZE = 50;
-    const STORAGE_KEY_VIEW = "myrecruits_view_mode"; // "cards" | "table"
 
     const els = {
       q: document.getElementById("q"),
@@ -309,16 +257,11 @@
       updated: document.getElementById("updated"),
       cards: document.getElementById("cards"),
       rows: document.getElementById("rows"),
-      tableWrap: document.getElementById("tableWrap"),
-      sentinel: document.getElementById("sentinel"),
-      btnCards: document.getElementById("btnCards"),
-      btnTable: document.getElementById("btnTable"),
+      loadMore: document.getElementById("loadMore"),
     };
 
     let all = [];
-    let filtered = [];
     let visibleLimit = PAGE_SIZE;
-    let observer = null;
 
     init();
 
@@ -340,9 +283,7 @@
       els.updated.textContent = `Loaded ${all.length} events • ${ms}ms`;
 
       wire();
-      applyDefaultView();
       render({ reset: true });
-      setupInfiniteScroll();
     }
 
     function wire() {
@@ -356,47 +297,10 @@
         els.upcoming.addEventListener(evt, resetAndRender);
       });
 
-      els.btnCards.addEventListener("click", () => setView("cards"));
-      els.btnTable.addEventListener("click", () => setView("table"));
-    }
-
-    function applyDefaultView() {
-      const saved = (localStorage.getItem(STORAGE_KEY_VIEW) || "").toLowerCase();
-      if (saved === "cards" || saved === "table") {
-        setView(saved, { persist: false });
-        return;
-      }
-      // Default: table on desktop, cards on mobile
-      const isDesktop = window.matchMedia("(min-width: 900px)").matches;
-      setView(isDesktop ? "table" : "cards", { persist: false });
-    }
-
-    function setView(mode, opts = { persist: true }) {
-      const m = mode === "table" ? "table" : "cards";
-      const persist = opts.persist !== false;
-
-      els.btnCards.classList.toggle("active", m === "cards");
-      els.btnTable.classList.toggle("active", m === "table");
-
-      els.cards.classList.toggle("hidden", m !== "cards");
-      els.tableWrap.classList.toggle("hidden", m !== "table");
-
-      if (persist) localStorage.setItem(STORAGE_KEY_VIEW, m);
-    }
-
-    function setupInfiniteScroll() {
-      if (observer) observer.disconnect();
-
-      observer = new IntersectionObserver((entries) => {
-        const hit = entries.some(e => e.isIntersecting);
-        if (!hit) return;
-
-        if (visibleLimit >= filtered.length) return;
-        visibleLimit = Math.min(filtered.length, visibleLimit + PAGE_SIZE);
-        paint();
-      }, { root: null, rootMargin: "600px 0px", threshold: 0 });
-
-      observer.observe(els.sentinel);
+      els.loadMore.addEventListener("click", () => {
+        visibleLimit += PAGE_SIZE;
+        render({ reset: false });
+      });
     }
 
     function render({ reset }) {
@@ -408,9 +312,10 @@
       const from = els.from.value ? new Date(els.from.value + "T00:00:00") : null;
       const to = els.to.value ? new Date(els.to.value + "T00:00:00") : null;
       const upcomingOnly = els.upcoming.checked;
+
       const today = startOfDay(new Date());
 
-      filtered = all.filter(r => {
+      let filtered = all.filter(r => {
         if (upcomingOnly && r._date < today) return false;
         if (state && r.STATE !== state) return false;
         if (host && r["HOSTED BY"] !== host) return false;
@@ -431,15 +336,19 @@
 
       filtered.sort((a, b) => a._date - b._date);
 
-      paint();
-    }
-
-    function paint() {
       const slice = filtered.slice(0, visibleLimit);
-      els.count.textContent = `Showing ${slice.length} of ${filtered.length} event(s)`;
 
+      els.count.textContent = `Showing ${slice.length} of ${filtered.length} event(s)`;
       renderCards(slice);
       renderTable(slice);
+
+      if (slice.length < filtered.length) {
+        const remain = filtered.length - slice.length;
+        els.loadMore.style.display = "inline-flex";
+        els.loadMore.textContent = `Load ${Math.min(PAGE_SIZE, remain)} more (${remain} remaining)`;
+      } else {
+        els.loadMore.style.display = "none";
+      }
     }
 
     function renderCards(rows) {
