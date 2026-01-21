@@ -1,3 +1,4 @@
+<!-- File: camps-mobile-v2.html -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -5,18 +6,28 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Football Camps & Combines</title>
   <style>
+    * { box-sizing: border-box; }
     :root { --pad: 12px; --radius: 12px; --shadow: 0 6px 18px rgba(0,0,0,.08); }
     body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: #fafafa; color: #111; }
     header { position: sticky; top: 0; z-index: 5; background: white; border-bottom: 1px solid #eee; }
     .wrap { max-width: 1100px; margin: 0 auto; padding: 14px; }
     h1 { font-size: 18px; margin: 0 0 10px; }
-    .controls { display: grid; grid-template-columns: 1fr 140px 180px 180px 140px 140px; gap: 10px; align-items: end; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 140px 180px 180px 140px 140px;
+      gap: 10px;
+      align-items: end;
+    }
+    .controls > div, .controls .pill { min-width: 0; }
     .controls label { display: block; font-size: 12px; color: #444; margin-bottom: 6px; }
-    .controls input, .controls select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; background: #fff; font-size: 14px; }
+    .controls input, .controls select { width: 100%; min-width: 0; padding: 10px; border: 1px solid #ddd; border-radius: 10px; background: #fff; font-size: 14px; }
     .pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 999px; background: #fff; font-size: 14px; }
     .pill input { width: 18px; height: 18px; }
+
     .meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: #555; }
     .badge { padding: 6px 10px; border-radius: 999px; background: #fff; border: 1px solid #eee; }
+    .error { color: #b00020; background: #fff; border: 1px solid #f2c6cc; padding: 10px 12px; border-radius: 12px; margin-top: 10px; display: none; }
 
     main { padding: 18px 14px 40px; }
     .grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 12px; }
@@ -29,17 +40,16 @@
     .state { font-size: 12px; color: #555; margin-top: 4px; }
     .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     .chip { font-size: 12px; padding: 6px 10px; border-radius: 999px; background: #f6f6f6; border: 1px solid #eee; }
-    .actions { margin-top: 10px; display: flex; gap: 10px; }
+    .actions { margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
     .btn { display: inline-flex; justify-content: center; align-items: center; padding: 10px 12px; border-radius: 12px; border: 1px solid #ddd; background: #fff; text-decoration: none; color: #111; font-weight: 600; font-size: 14px; }
     .btn:active { transform: translateY(1px); }
+    a { color: inherit; }
 
-    /* Desktop table */
     .tableWrap { max-width: 1100px; margin: 0 auto; display: none; }
     table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #eee; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
     th, td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; vertical-align: top; }
     th { text-align: left; font-size: 12px; color: #444; background: #fbfbfb; position: sticky; top: 74px; z-index: 2; }
     tr:hover td { background: #fcfcfc; }
-    a { color: inherit; }
 
     @media (min-width: 900px) {
       .grid { display: none; }
@@ -48,6 +58,9 @@
     }
     @media (max-width: 900px) {
       .controls { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 520px) {
+      .controls { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -96,6 +109,8 @@
         <span class="badge" id="count">Loading…</span>
         <span class="badge" id="updated"></span>
       </div>
+
+      <div class="error" id="err"></div>
     </div>
   </header>
 
@@ -122,17 +137,11 @@
   </main>
 
   <script>
-    /**
-     * Data source options:
-     * A) Publish your Google Sheet (Database) as CSV and paste the URL below.
-     * B) If Google adds CORS restrictions, host this page on GitHub/Cloudflare Pages and embed via iframe.
-     */
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMvr__OkB3wgl4GvpZLJ61u_MfemESGiLBKEwufYFVwj_S7jiHFZraACGJRJogY6I29r17w34EGzVF/pub?gid=700608427&single=true&output=csv";
+    // You can override via ?csv=ENCODED_URL if you ever want.
+    const DEFAULT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMvr__OkB3wgl4GvpZLJ61u_MfemESGiLBKEwufYFVwj_S7jiHFZraACGJRJogY6I29r17w34EGzVF/pub?gid=700608427&single=true&output=csv";
+    const CSV_URL = new URLSearchParams(location.search).get("csv") || DEFAULT_CSV_URL;
 
-    // Expected columns (any order ok; header names are used):
-    // STATE | DATE | HOSTED BY| EVENT NAME | GRADES/AGE | DURATION | COST | URL | LAST_SEEN (optional)
     const REQUIRED = ["STATE", "DATE", "EVENT NAME", "HOSTED BY", "URL"];
-    const OPTIONAL = ["COST", "DURATION", "GRADES", "APPROVED"];
 
     const els = {
       q: document.getElementById("q"),
@@ -143,32 +152,49 @@
       upcoming: document.getElementById("upcoming"),
       count: document.getElementById("count"),
       updated: document.getElementById("updated"),
+      err: document.getElementById("err"),
       cards: document.getElementById("cards"),
       rows: document.getElementById("rows"),
     };
 
     let all = [];
-    let headerMap = {};
 
     init();
 
     async function init() {
       if (!CSV_URL || CSV_URL.includes("PASTE_")) {
-        els.count.textContent = "Set CSV_URL in the page source.";
+        showError("CSV_URL is not set.");
         return;
       }
 
       const started = performance.now();
-      const csv = await fetch(CSV_URL, { cache: "no-store" }).then(r => r.text());
-      const parsed = parseCsv(csv);
 
-      headerMap = buildHeaderMap(parsed.headers);
-      validateHeaders(parsed.headers);
+      let text;
+      try {
+        const res = await fetch(CSV_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        text = await res.text();
+      } catch (e) {
+        showError(
+          `Could not load CSV. This is usually a CORS/network issue.\n` +
+          `Try opening the GitHub page directly (not inside a restrictive embed), or use the iframe embed.\n\n` +
+          `Details: ${String(e)}`
+        );
+        els.count.textContent = "0 event(s) shown";
+        return;
+      }
+
+      const parsed = parseCsv(text);
+      const headersU = parsed.headers.map(h => normHeader(h));
+
+      validateHeaders(headersU);
 
       all = parsed.rows
-        .map(r => rowObj(parsed.headers, r))
-        .filter(r => r.URL && r["EVENT NAME"] && r.DATE)
-        .map(r => normalizeRow(r));
+        .map(row => toCanonical(parsed.headers, row))
+        .filter(r => r.URL && r.EVENT_NAME && r.DATE_ISO)
+        .map(r => ({ ...r, _date: parseISODate(r.DATE_ISO) }));
+
+      all = dedupe(all);
 
       hydrateFilters(all);
 
@@ -203,20 +229,17 @@
       let filtered = all.filter(r => {
         if (upcomingOnly && r._date < today) return false;
         if (state && r.STATE !== state) return false;
-        if (host && r["HOSTED BY"] !== host) return false;
+        if (host && r.HOSTED_BY !== host) return false;
         if (from && r._date < from) return false;
         if (to && r._date > to) return false;
 
         if (q) {
           const blob = [
-            r.STATE, r.DATE, r["EVENT NAME"], r["HOSTED BY"], r.URL,
+            r.STATE, r.DATE_ISO, r.EVENT_NAME, r.HOSTED_BY, r.URL,
             r.COST || "", r.DURATION || "", r.GRADES || ""
           ].join(" ").toLowerCase();
           if (!blob.includes(q)) return false;
         }
-
-        // If APPROVED exists, only show approved; otherwise show everything.
-        if ("APPROVED" in r && r.APPROVED !== true) return false;
 
         return true;
       });
@@ -240,11 +263,11 @@
           <div class="card">
             <div class="row1">
               <div>
-                <div class="title">${escapeHtml(r["EVENT NAME"])}</div>
-                <div class="sub">${escapeHtml(r["HOSTED BY"])}</div>
+                <div class="title">${escapeHtml(r.EVENT_NAME)}</div>
+                <div class="sub">${escapeHtml(r.HOSTED_BY)}</div>
               </div>
               <div class="right">
-                <div class="date">${escapeHtml(r.DATE)}</div>
+                <div class="date">${escapeHtml(r.DATE_ISO)}</div>
                 <div class="state">${escapeHtml(r.STATE || "")}</div>
               </div>
             </div>
@@ -261,10 +284,10 @@
     function renderTable(rows) {
       els.rows.innerHTML = rows.map(r => `
         <tr>
-          <td>${escapeHtml(r.DATE)}</td>
+          <td>${escapeHtml(r.DATE_ISO)}</td>
           <td>${escapeHtml(r.STATE || "")}</td>
-          <td>${escapeHtml(r["EVENT NAME"])}</td>
-          <td>${escapeHtml(r["HOSTED BY"])}</td>
+          <td>${escapeHtml(r.EVENT_NAME)}</td>
+          <td>${escapeHtml(r.HOSTED_BY)}</td>
           <td>${escapeHtml(r.COST || "")}</td>
           <td>${escapeHtml(r.DURATION || "")}</td>
           <td>${escapeHtml(r.GRADES || "")}</td>
@@ -279,7 +302,7 @@
 
       rows.forEach(r => {
         if (r.STATE) states.add(r.STATE);
-        if (r["HOSTED BY"]) hosts.add(r["HOSTED BY"]);
+        if (r.HOSTED_BY) hosts.add(r.HOSTED_BY);
       });
 
       setOptions(els.state, [...states].sort());
@@ -292,53 +315,71 @@
       if (values.includes(keep)) select.value = keep;
     }
 
-    function normalizeRow(r) {
-      const out = {};
-      for (const k of Object.keys(r)) out[k.toUpperCase()] = r[k];
-
-      // Map canonical names back for use in code
-      out.STATE = (out.STATE || "").trim().toUpperCase();
-      out.DATE = toISODate(out.DATE);
-      out["EVENT NAME"] = (out["EVENT NAME"] || "").trim();
-      out["HOSTED BY"] = (out["HOSTED BY"] || "").trim();
-      out.URL = (out.URL || "").trim();
-      out.COST = (out.COST || "").trim();
-      out.DURATION = (out.DURATION || "").trim();
-      out.GRADES = (out.GRADES || "").trim();
-
-      // APPROVED: allow TRUE/true/Yes
-      if ("APPROVED" in out) {
-        const v = String(out.APPROVED || "").trim().toLowerCase();
-        out.APPROVED = (v === "true" || v === "yes" || v === "y" || v === "1");
+    function dedupe(rows) {
+      const seen = new Set();
+      const out = [];
+      for (const r of rows) {
+        const key = [r.DATE_ISO, r.STATE, r.HOSTED_BY, r.EVENT_NAME, r.URL].join("|").toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(r);
       }
-
-      out._date = parseISODate(out.DATE);
       return out;
     }
 
-    function validateHeaders(headers) {
-      const upper = headers.map(h => String(h || "").trim().toUpperCase());
+    function validateHeaders(headersUpper) {
       for (const req of REQUIRED) {
-        if (!upper.includes(req)) {
+        if (!headersUpper.includes(req)) {
           throw new Error(`Missing required column: ${req}`);
         }
       }
     }
 
-    function buildHeaderMap(headers) {
-      const map = {};
-      headers.forEach((h, i) => map[String(h || "").trim().toUpperCase()] = i);
-      return map;
+    function toCanonical(headers, row) {
+      const obj = {};
+      for (let i = 0; i < headers.length; i++) {
+        obj[normHeader(headers[i])] = String(row[i] ?? "").trim();
+      }
+
+      const STATE = pick(obj, ["STATE", "ST"]);
+      const DATE_RAW = pick(obj, ["DATE", "START DATE", "STARTDATE", "START"]);
+      const EVENT_NAME = pick(obj, ["EVENT NAME", "EVENT", "NAME", "TITLE"]);
+      const HOSTED_BY = pick(obj, ["HOSTED BY", "HOST", "ORGANIZER", "SCHOOL"]);
+      const URL = pick(obj, ["URL", "LINK"]);
+
+      const COST = pick(obj, ["COST", "PRICE", "FEE"]);
+      const DURATION = pick(obj, ["DURATION", "LENGTH"]);
+      const GRADES = pick(obj, ["GRADES/AGE", "GRADES", "AGE", "GRADESAGE"]);
+      const LAST_SEEN = pick(obj, ["LAST_SEEN", "LAST SEEN", "UPDATED"]);
+
+      const DATE_ISO = toISODate(DATE_RAW);
+
+      return {
+        STATE: (STATE || "").toUpperCase(),
+        DATE_ISO,
+        EVENT_NAME,
+        HOSTED_BY,
+        URL,
+        COST,
+        DURATION,
+        GRADES,
+        LAST_SEEN,
+      };
     }
 
-    function rowObj(headers, row) {
-      const obj = {};
-      for (let i = 0; i < headers.length; i++) obj[headers[i]] = row[i] ?? "";
-      return obj;
+    function pick(obj, keys) {
+      for (const k of keys) {
+        const kk = normHeader(k);
+        if (obj[kk]) return obj[kk];
+      }
+      return "";
+    }
+
+    function normHeader(h) {
+      return String(h || "").trim().toUpperCase();
     }
 
     function parseCsv(text) {
-      // Minimal CSV parser supporting quoted fields + commas + newlines.
       const rows = [];
       let cur = [];
       let field = "";
@@ -348,24 +389,13 @@
         const c = text[i];
         const next = text[i + 1];
 
-        if (c === '"' && inQuotes && next === '"') {
-          field += '"';
-          i++;
-          continue;
-        }
-        if (c === '"') {
-          inQuotes = !inQuotes;
-          continue;
-        }
-        if (!inQuotes && c === ",") {
-          cur.push(field);
-          field = "";
-          continue;
-        }
+        if (c === '"' && inQuotes && next === '"') { field += '"'; i++; continue; }
+        if (c === '"') { inQuotes = !inQuotes; continue; }
+
+        if (!inQuotes && c === ",") { cur.push(field); field = ""; continue; }
         if (!inQuotes && (c === "\n" || c === "\r")) {
           if (c === "\r" && next === "\n") i++;
-          cur.push(field);
-          field = "";
+          cur.push(field); field = "";
           if (cur.length > 1 || cur[0] !== "") rows.push(cur);
           cur = [];
           continue;
@@ -380,7 +410,6 @@
     }
 
     function toISODate(v) {
-      // Accepts yyyy-mm-dd, mm/dd/yyyy, or Date-like strings.
       const s = String(v || "").trim();
       if (!s) return "";
 
@@ -399,7 +428,7 @@
         const dd = String(d.getDate()).padStart(2, "0");
         return `${d.getFullYear()}-${mm}-${dd}`;
       }
-      return s;
+      return "";
     }
 
     function parseISODate(s) {
@@ -413,7 +442,6 @@
     }
 
     function buildCalendarLink(r) {
-      // Google Calendar "TEMPLATE" link
       const start = r._date;
       const end = new Date(start.getTime() + 60 * 60 * 1000);
       const fmt = d => {
@@ -423,10 +451,15 @@
         return `${y}${m}${day}T000000Z`;
       };
       const dates = `${fmt(start)}/${fmt(end)}`;
-      const text = encodeURIComponent(r["EVENT NAME"]);
-      const details = encodeURIComponent(`${r["HOSTED BY"]}\n${r.URL}`);
+      const text = encodeURIComponent(r.EVENT_NAME);
+      const details = encodeURIComponent(`${r.HOSTED_BY}\n${r.URL}`);
       const loc = encodeURIComponent(r.STATE || "");
       return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${loc}`;
+    }
+
+    function showError(msg) {
+      els.err.style.display = "block";
+      els.err.textContent = msg;
     }
 
     function escapeHtml(s) {
