@@ -8,14 +8,14 @@
     :root { --shadow: 0 6px 18px rgba(0,0,0,.08); }
 
     * { box-sizing: border-box; }
-    html, body { height: 100%; }
+    html, body { height: 100%; max-width: 100vw; }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       background: #fafafa;
       color: #111;
       min-height: 100vh;
-      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     header {
@@ -24,18 +24,15 @@
       z-index: 5;
       background: #fff;
       border-bottom: 1px solid #eee;
+      overflow-x: hidden;
     }
 
     .wrap { max-width: 1100px; margin: 0 auto; padding: 14px; }
     h1 { font-size: 18px; margin: 0 0 10px; }
 
-    /* ✅ FIX: controls never overlap (wide screens use safe fixed cols; smaller wraps cleanly) */
-    .controls {
-      display: grid;
-      gap: 10px;
-      align-items: end;
-    }
-    .controls > * { min-width: 0; } /* critical: prevents grid-item overflow */
+    /* Controls */
+    .controls { display: grid; gap: 10px; align-items: end; width: 100%; }
+    .controls > * { min-width: 0; }
     .controls label { display: block; font-size: 12px; color: #444; margin-bottom: 6px; }
     .controls input, .controls select {
       width: 100%;
@@ -44,6 +41,7 @@
       border-radius: 10px;
       background: #fff;
       font-size: 14px;
+      min-width: 0;
     }
 
     @media (min-width: 1100px) {
@@ -63,26 +61,69 @@
       border-radius: 999px;
       background: #fff;
       font-size: 14px;
-      width: 100%;              /* ✅ prevents pill overflow into neighbor */
+      width: 100%;
       justify-content: flex-start;
+      user-select: none;
     }
     .pill input { width: 18px; height: 18px; flex: 0 0 auto; }
 
-    .meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: #555; }
+    .metaRow {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #555; }
     .badge { padding: 6px 10px; border-radius: 999px; background: #fff; border: 1px solid #eee; }
 
-    main { padding: 18px 14px 40px; }
+    .actionsRow { display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
-    /* Mobile cards */
-    .grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 12px; }
-    .card { background: #fff; border: 1px solid #eee; border-radius: 16px; box-shadow: var(--shadow); padding: 14px; }
+    .viewToggle {
+      display: inline-flex;
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #fff;
+      max-width: 100%;
+    }
+    .viewToggle button {
+      border: 0;
+      background: transparent;
+      padding: 8px 12px;
+      font-weight: 900;
+      font-size: 12px;
+      cursor: pointer;
+      color: #333;
+      white-space: nowrap;
+    }
+    .viewToggle button.active { background: #111; color: #fff; }
 
+    .resetBtn {
+      border: 1px solid #ddd;
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    main { padding: 18px 14px 40px; overflow-x: hidden; }
+
+    /* Cards */
+    .grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 12px; width: 100%; }
+    .card { background: #fff; border: 1px solid #eee; border-radius: 16px; box-shadow: var(--shadow); padding: 14px; width: 100%; }
     .row1 { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
     .left { min-width: 0; }
 
     .title {
       font-size: 16px;
-      font-weight: 800;
+      font-weight: 900;
       margin: 0 0 6px;
       line-height: 1.2;
       display: -webkit-box;
@@ -108,8 +149,8 @@
       max-width: 170px;
       flex: 0 0 auto;
     }
-    .stampDate { font-weight: 800; font-size: 14px; line-height: 1.1; text-align: right; }
-    .stampState { font-size: 12px; color: #666; font-weight: 700; letter-spacing: .02em; }
+    .stampDate { font-weight: 900; font-size: 14px; line-height: 1.1; text-align: right; }
+    .stampState { font-size: 12px; color: #666; font-weight: 800; letter-spacing: .02em; }
 
     .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
     .chip { font-size: 12px; padding: 6px 10px; border-radius: 999px; background: #f6f6f6; border: 1px solid #eee; white-space: nowrap; }
@@ -125,45 +166,58 @@
       background: #fff;
       text-decoration: none;
       color: #111;
-      font-weight: 800;
+      font-weight: 900;
       font-size: 14px;
     }
 
-    .moreWrap { max-width: 1100px; margin: 14px auto 0; display: flex; justify-content: center; }
-    .loadMore { padding: 12px 14px; border-radius: 999px; border: 1px solid #ddd; background: #fff; font-weight: 800; cursor: pointer; }
-
-    /* Desktop table */
-    .tableWrap { max-width: 1100px; margin: 0 auto; display: none; }
-
-    /* ✅ FIX: make table scroll container; header sticks INSIDE container (no “row 2”) */
+    /* Table */
+    .tableWrap { max-width: 1100px; margin: 0 auto; width: 100%; }
     .tableScroll {
       background: #fff;
       border: 1px solid #eee;
       border-radius: 16px;
       box-shadow: var(--shadow);
-      overflow: auto;
-      max-height: calc(100vh - 260px);
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
     }
-
-    table { width: 100%; border-collapse: collapse; }
+    table { width: 100%; border-collapse: collapse; min-width: 900px; }
     th, td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; vertical-align: top; }
+
     thead th {
       text-align: left;
       font-size: 12px;
       color: #444;
       background: #fbfbfb;
       position: sticky;
-      top: 0;         /* ✅ sticky relative to .tableScroll */
+      top: 0;
       z-index: 2;
+      cursor: pointer;
+      user-select: none;
     }
+
+    thead th .sort { font-weight: 900; margin-left: 6px; opacity: .6; font-size: 12px; }
+
     tr:hover td { background: #fcfcfc; }
     a { color: inherit; }
 
-    @media (min-width: 900px) {
-      .grid { display: none; }
-      .tableWrap { display: block; }
-      h1 { font-size: 20px; }
+    .hidden { display: none !important; }
+
+    .empty {
+      max-width: 1100px;
+      margin: 14px auto 0;
+      padding: 14px;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      color: #444;
+      font-size: 14px;
+      font-weight: 700;
     }
+
+    #sentinel { height: 1px; width: 100%; max-width: 1100px; margin: 0 auto; }
   </style>
 </head>
 <body>
@@ -206,9 +260,20 @@
         </div>
       </div>
 
-      <div class="meta">
-        <span class="badge" id="count">Loading…</span>
-        <span class="badge" id="updated"></span>
+      <div class="metaRow">
+        <div class="meta">
+          <span class="badge" id="count">Loading…</span>
+          <span class="badge" id="updated"></span>
+          <span class="badge" id="sortLabel"></span>
+        </div>
+
+        <div class="actionsRow">
+          <button class="resetBtn" id="resetBtn" type="button">Reset filters</button>
+          <div class="viewToggle" role="group" aria-label="View mode">
+            <button id="btnCards" type="button">Cards</button>
+            <button id="btnTable" type="button">Table</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -216,19 +281,19 @@
   <main>
     <div class="grid" id="cards"></div>
 
-    <div class="tableWrap">
+    <div class="tableWrap" id="tableWrap">
       <div class="tableScroll">
         <table>
           <thead>
             <tr>
-              <th style="width:130px;">Date</th>
-              <th style="width:60px;">State</th>
-              <th>Event</th>
-              <th style="width:220px;">Hosted by</th>
-              <th style="width:110px;">Cost</th>
-              <th style="width:110px;">Duration</th>
-              <th style="width:150px;">Grades</th>
-              <th style="width:80px;">Link</th>
+              <th data-key="DATE" style="width:150px;">Date <span class="sort" id="s_DATE"></span></th>
+              <th data-key="STATE" style="width:70px;">State <span class="sort" id="s_STATE"></span></th>
+              <th data-key="EVENT NAME">Event <span class="sort" id="s_EVENT NAME"></span></th>
+              <th data-key="HOSTED BY" style="width:240px;">Hosted by <span class="sort" id="s_HOSTED BY"></span></th>
+              <th data-key="COST" style="width:120px;">Cost <span class="sort" id="s_COST"></span></th>
+              <th data-key="DURATION" style="width:120px;">Duration <span class="sort" id="s_DURATION"></span></th>
+              <th data-key="GRADES" style="width:170px;">Grades <span class="sort" id="s_GRADES"></span></th>
+              <th data-key="URL" style="width:90px;">Link <span class="sort" id="s_URL"></span></th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -236,15 +301,17 @@
       </div>
     </div>
 
-    <div class="moreWrap">
-      <button id="loadMore" class="loadMore" style="display:none;">Load more</button>
-    </div>
+    <div class="empty hidden" id="empty">No events match your filters.</div>
+    <div id="sentinel"></div>
   </main>
 
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMvr__OkB3wgl4GvpZLJ61u_MfemESGiLBKEwufYFVwj_S7jiHFZraACGJRJogY6I29r17w34EGzVF/pub?gid=700608427&single=true&output=csv";
+
     const REQUIRED = ["STATE", "DATE", "EVENT NAME", "HOSTED BY", "URL"];
     const PAGE_SIZE = 50;
+
+    const STORAGE_KEY_VIEW = "myrecruits_view_mode";
 
     const els = {
       q: document.getElementById("q"),
@@ -255,13 +322,26 @@
       upcoming: document.getElementById("upcoming"),
       count: document.getElementById("count"),
       updated: document.getElementById("updated"),
+      sortLabel: document.getElementById("sortLabel"),
       cards: document.getElementById("cards"),
       rows: document.getElementById("rows"),
-      loadMore: document.getElementById("loadMore"),
+      tableWrap: document.getElementById("tableWrap"),
+      btnCards: document.getElementById("btnCards"),
+      btnTable: document.getElementById("btnTable"),
+      resetBtn: document.getElementById("resetBtn"),
+      sentinel: document.getElementById("sentinel"),
+      empty: document.getElementById("empty"),
+      tableHead: document.querySelector("thead"),
     };
 
     let all = [];
+    let filtered = [];
     let visibleLimit = PAGE_SIZE;
+    let observer = null;
+
+    // Default sort (not forced): Date asc
+    let sortKey = "DATE";
+    let sortDir = "asc";
 
     init();
 
@@ -275,7 +355,7 @@
       all = parsed.rows
         .map(r => rowObj(parsed.headers, r))
         .map(r => normalizeRow(r))
-        .filter(r => r.URL && r["EVENT NAME"] && r.DATE && r._date instanceof Date && !isNaN(r._date.getTime()));
+        .filter(r => r.URL && r["EVENT NAME"] && r._date instanceof Date && !isNaN(r._date.getTime()));
 
       hydrateFilters(all);
 
@@ -283,11 +363,15 @@
       els.updated.textContent = `Loaded ${all.length} events • ${ms}ms`;
 
       wire();
+      applyDefaultView();
+      updateSortIndicators();
       render({ reset: true });
+      setupInfiniteScroll();
     }
 
     function wire() {
       const resetAndRender = () => render({ reset: true });
+
       ["input", "change"].forEach(evt => {
         els.q.addEventListener(evt, resetAndRender);
         els.state.addEventListener(evt, resetAndRender);
@@ -297,10 +381,72 @@
         els.upcoming.addEventListener(evt, resetAndRender);
       });
 
-      els.loadMore.addEventListener("click", () => {
-        visibleLimit += PAGE_SIZE;
-        render({ reset: false });
+      els.btnCards.addEventListener("click", () => setView("cards"));
+      els.btnTable.addEventListener("click", () => setView("table"));
+
+      els.resetBtn.addEventListener("click", () => {
+        els.q.value = "";
+        els.state.value = "";
+        els.host.value = "";
+        els.from.value = "";
+        els.to.value = "";
+        els.upcoming.checked = true;
+
+        sortKey = "DATE";
+        sortDir = "asc";
+        updateSortIndicators();
+        render({ reset: true });
       });
+
+      els.tableHead.addEventListener("click", (e) => {
+        const th = e.target.closest("th");
+        if (!th) return;
+
+        const key = th.getAttribute("data-key");
+        if (!key) return;
+
+        if (sortKey === key) sortDir = (sortDir === "asc" ? "desc" : "asc");
+        else { sortKey = key; sortDir = "asc"; }
+
+        updateSortIndicators();
+        render({ reset: true });
+      });
+    }
+
+    function applyDefaultView() {
+      const saved = (localStorage.getItem(STORAGE_KEY_VIEW) || "").toLowerCase();
+      if (saved === "cards" || saved === "table") { setView(saved, { persist: false }); return; }
+
+      const isDesktop = window.matchMedia("(min-width: 900px)").matches;
+      setView(isDesktop ? "table" : "cards", { persist: false });
+    }
+
+    function setView(mode, opts = { persist: true }) {
+      const m = mode === "table" ? "table" : "cards";
+      const persist = opts.persist !== false;
+
+      els.btnCards.classList.toggle("active", m === "cards");
+      els.btnTable.classList.toggle("active", m === "table");
+
+      els.cards.classList.toggle("hidden", m !== "cards");
+      els.tableWrap.classList.toggle("hidden", m !== "table");
+
+      if (persist) localStorage.setItem(STORAGE_KEY_VIEW, m);
+    }
+
+    function setupInfiniteScroll() {
+      if (observer) observer.disconnect();
+
+      observer = new IntersectionObserver((entries) => {
+        const hit = entries.some(e => e.isIntersecting);
+        if (!hit) return;
+        if (visibleLimit >= filtered.length) return;
+
+        visibleLimit = Math.min(filtered.length, visibleLimit + PAGE_SIZE);
+        paint();
+      }, { root: null, rootMargin: "700px 0px", threshold: 0 });
+
+      observer.observe(els.sentinel);
     }
 
     function render({ reset }) {
@@ -312,10 +458,9 @@
       const from = els.from.value ? new Date(els.from.value + "T00:00:00") : null;
       const to = els.to.value ? new Date(els.to.value + "T00:00:00") : null;
       const upcomingOnly = els.upcoming.checked;
-
       const today = startOfDay(new Date());
 
-      let filtered = all.filter(r => {
+      filtered = all.filter(r => {
         if (upcomingOnly && r._date < today) return false;
         if (state && r.STATE !== state) return false;
         if (host && r["HOSTED BY"] !== host) return false;
@@ -334,21 +479,88 @@
         return true;
       });
 
-      filtered.sort((a, b) => a._date - b._date);
+      sortRows(filtered);
+      paint();
+    }
 
+    function paint() {
       const slice = filtered.slice(0, visibleLimit);
 
       els.count.textContent = `Showing ${slice.length} of ${filtered.length} event(s)`;
+      els.empty.classList.toggle("hidden", filtered.length !== 0);
+
       renderCards(slice);
       renderTable(slice);
+    }
 
-      if (slice.length < filtered.length) {
-        const remain = filtered.length - slice.length;
-        els.loadMore.style.display = "inline-flex";
-        els.loadMore.textContent = `Load ${Math.min(PAGE_SIZE, remain)} more (${remain} remaining)`;
-      } else {
-        els.loadMore.style.display = "none";
+    function sortRows(rows) {
+      const dir = (sortDir === "desc") ? -1 : 1;
+
+      rows.sort((a, b) => {
+        const av = getSortValue(a, sortKey);
+        const bv = getSortValue(b, sortKey);
+
+        if (av < bv) return -1 * dir;
+        if (av > bv) return  1 * dir;
+
+        // Tie-breakers: date then name (stable)
+        const da = a._date instanceof Date ? a._date.getTime() : 0;
+        const db = b._date instanceof Date ? b._date.getTime() : 0;
+        if (da !== db) return da - db;
+
+        return String(a["EVENT NAME"] || "").localeCompare(String(b["EVENT NAME"] || ""));
+      });
+    }
+
+    function getSortValue(r, key) {
+      if (key === "DATE") return (r._date instanceof Date ? r._date.getTime() : 0);
+      if (key === "STATE") return (r.STATE || "");
+      if (key === "EVENT NAME") return (r["EVENT NAME"] || "");
+      if (key === "HOSTED BY") return (r["HOSTED BY"] || "");
+      if (key === "COST") return normalizeCost(r.COST || "");
+      if (key === "DURATION") return (r.DURATION || "");
+      if (key === "GRADES") return (r.GRADES || "");
+      if (key === "URL") return (r.URL || "");
+      return String(r[key] || "");
+    }
+
+    function normalizeCost(s) {
+      const str = String(s || "").trim();
+      const m = str.match(/-?\d+(\.\d+)?/);
+      if (!m) return Number.POSITIVE_INFINITY;
+      return Number(m[0]);
+    }
+
+    function updateSortIndicators() {
+      const pretty = (k) => {
+        const map = {
+          "DATE": "Date",
+          "STATE": "State",
+          "EVENT NAME": "Event",
+          "HOSTED BY": "Hosted by",
+          "COST": "Cost",
+          "DURATION": "Duration",
+          "GRADES": "Grades",
+          "URL": "Link",
+        };
+        return map[k] || k;
+      };
+
+      const keys = ["DATE","STATE","EVENT NAME","HOSTED BY","COST","DURATION","GRADES","URL"];
+      for (const k of keys) {
+        const el = document.getElementById("s_" + k);
+        if (!el) continue;
+        if (k !== sortKey) { el.textContent = ""; continue; }
+        el.textContent = (sortDir === "asc" ? "▲" : "▼");
       }
+
+      const dirText = (sortDir === "asc") ? "A→Z" : "Z→A";
+      const special =
+        (sortKey === "DATE") ? (sortDir === "asc" ? "Old→New" : "New→Old") :
+        (sortKey === "COST") ? (sortDir === "asc" ? "Low→High" : "High→Low") :
+        dirText;
+
+      els.sortLabel.textContent = `Sort: ${pretty(sortKey)} (${special})`;
     }
 
     function renderCards(rows) {
@@ -468,7 +680,6 @@
 
         if (c === '"' && inQuotes && next === '"') { field += '"'; i++; continue; }
         if (c === '"') { inQuotes = !inQuotes; continue; }
-
         if (!inQuotes && c === ",") { cur.push(field); field = ""; continue; }
 
         if (!inQuotes && (c === "\n" || c === "\r")) {
@@ -480,6 +691,7 @@
         }
         field += c;
       }
+
       cur.push(field);
       if (cur.length > 1 || cur[0] !== "") rows.push(cur);
 
