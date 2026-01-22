@@ -8,7 +8,7 @@
   <style>
     :root {
       --shadow: 0 6px 18px rgba(0,0,0,.08);
-      --headerH: 0px;         /* set by JS */
+      --headerH: 0px;
       --pagePad: 14px;
       --tableGap: 10px;
       --tableMaxH: calc(100vh - var(--headerH) - (var(--pagePad) * 2) - var(--tableGap));
@@ -17,7 +17,7 @@
 
     * { box-sizing: border-box; }
 
-    /* Kill horizontal bounce (iOS Safari friendly) */
+    /* Kill horizontal bounce */
     html, body {
       height: 100%;
       width: 100%;
@@ -34,7 +34,7 @@
       color: #111;
     }
 
-    /* Mobile scroll-lock when table view is active */
+    /* Optional mobile scroll-lock when table view active */
     body.locked {
       position: fixed;
       left: 0;
@@ -154,6 +154,7 @@
     .card { background: #fff; border: 1px solid #eee; border-radius: 16px; box-shadow: var(--shadow); padding: 14px; width: 100%; }
     .row1 { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
     .left { min-width: 0; }
+
     .title {
       font-size: 16px;
       font-weight: 900;
@@ -167,6 +168,7 @@
       cursor: pointer;
     }
     .title.expanded { display: block; -webkit-line-clamp: unset; }
+
     .sub { font-size: 13px; color: #444; margin: 0; }
 
     .stamp {
@@ -226,7 +228,7 @@
       .tableScroll { max-height: calc(100vh - var(--headerH) - 10px); }
     }
 
-    /* Sticky header reliability fix (Safari): use separate + sticky THEAD */
+    /* Sticky header reliability fix */
     table {
       width: 100%;
       min-width: var(--tableMinW);
@@ -236,11 +238,7 @@
 
     th, td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; vertical-align: top; }
 
-    thead {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
+    thead { position: sticky; top: 0; z-index: 10; }
     thead th {
       text-align: left;
       font-size: 12px;
@@ -254,6 +252,7 @@
       white-space: nowrap;
       border-bottom: 1px solid #eee;
     }
+
     thead th .sort { font-weight: 900; margin-left: 6px; opacity: .6; font-size: 12px; }
 
     tr:hover td { background: #fcfcfc; }
@@ -276,23 +275,6 @@
     }
 
     #sentinel { height: 1px; width: 100%; max-width: 1100px; margin: 0 auto; }
-
-    .toTop {
-      position: fixed;
-      right: 14px;
-      bottom: 14px;
-      z-index: 999;
-      border: 1px solid #ddd;
-      background: #fff;
-      border-radius: 999px;
-      padding: 10px 12px;
-      font-weight: 900;
-      font-size: 12px;
-      box-shadow: var(--shadow);
-      cursor: pointer;
-      display: none;
-    }
-    .toTop.show { display: inline-flex; align-items: center; gap: 8px; }
   </style>
 </head>
 
@@ -341,7 +323,6 @@
           <span class="badge" id="count">Loading…</span>
           <span class="badge" id="updated"></span>
           <span class="badge" id="sortLabel"></span>
-          <span class="badge hidden" id="lockBadge">Table scroll locked</span>
         </div>
 
         <div class="actionsRow">
@@ -364,14 +345,14 @@
           <table>
             <thead>
               <tr>
-                <th data-key="DATE" style="width:150px;">Date <span class="sort" id="s_DATE"></span></th>
-                <th data-key="STATE" style="width:70px;">State <span class="sort" id="s_STATE"></span></th>
-                <th data-key="EVENT NAME">Event <span class="sort" id="s_EVENT NAME"></span></th>
-                <th data-key="HOSTED BY" style="width:240px;">Hosted by <span class="sort" id="s_HOSTED BY"></span></th>
-                <th data-key="COST" style="width:120px;">Cost <span class="sort" id="s_COST"></span></th>
-                <th data-key="DURATION" style="width:120px;">Duration <span class="sort" id="s_DURATION"></span></th>
-                <th data-key="GRADES" style="width:170px;">Grades <span class="sort" id="s_GRADES"></span></th>
-                <th data-key="URL" style="width:90px;">Link <span class="sort" id="s_URL"></span></th>
+                <th data-key="DATE" style="width:150px;">Date <span class="sort"></span></th>
+                <th data-key="STATE" style="width:70px;">State <span class="sort"></span></th>
+                <th data-key="EVENT NAME">Event <span class="sort"></span></th>
+                <th data-key="HOSTED BY" style="width:240px;">Hosted by <span class="sort"></span></th>
+                <th data-key="COST" style="width:120px;">Cost <span class="sort"></span></th>
+                <th data-key="DURATION" style="width:120px;">Duration <span class="sort"></span></th>
+                <th data-key="GRADES" style="width:170px;">Grades <span class="sort"></span></th>
+                <th data-key="URL" style="width:90px;">Link <span class="sort"></span></th>
               </tr>
             </thead>
             <tbody id="rows"></tbody>
@@ -384,12 +365,10 @@
     <div id="sentinel"></div>
   </main>
 
-  <button class="toTop" id="toTop" type="button">↑ Top</button>
-
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMvr__OkB3wgl4GvpZLJ61u_MfemESGiLBKEwufYFVwj_S7jiHFZraACGJRJogY6I29r17w34EGzVF/pub?gid=700608427&single=true&output=csv";
     const REQUIRED = ["STATE", "DATE", "EVENT NAME", "HOSTED BY", "URL"];
-    const PAGE_SIZE = 60;
+    const PAGE_SIZE = 80;
     const STORAGE_KEY_VIEW = "myrecruits_view_mode";
 
     const els = {
@@ -402,7 +381,6 @@
       count: document.getElementById("count"),
       updated: document.getElementById("updated"),
       sortLabel: document.getElementById("sortLabel"),
-      lockBadge: document.getElementById("lockBadge"),
       cards: document.getElementById("cards"),
       rows: document.getElementById("rows"),
       tableWrap: document.getElementById("tableWrap"),
@@ -412,8 +390,8 @@
       resetBtn: document.getElementById("resetBtn"),
       sentinel: document.getElementById("sentinel"),
       empty: document.getElementById("empty"),
-      tableHead: document.querySelector("thead"),
-      toTop: document.getElementById("toTop"),
+      thead: document.querySelector("thead"),
+      ths: Array.from(document.querySelectorAll("thead th")),
     };
 
     let all = [];
@@ -424,12 +402,13 @@
     let sortKey = "DATE";
     let sortDir = "asc";
 
-    let scrollYBeforeLock = 0;
-    let isLocked = false;
-
     init();
 
     async function init() {
+      syncHeaderHeightVar();
+      window.addEventListener("resize", syncHeaderHeightVar);
+      window.addEventListener("orientationchange", syncHeaderHeightVar);
+
       const started = performance.now();
       const csv = await fetch(CSV_URL, { cache: "no-store" }).then(r => r.text());
       const parsed = parseCsv(csv);
@@ -447,42 +426,49 @@
 
       wire();
       applyDefaultView();
-      syncHeaderHeightVar();
       updateSortIndicators();
       render({ reset: true });
       setupInfiniteScroll();
-
-      window.addEventListener("resize", syncHeaderHeightVar);
-      window.addEventListener("orientationchange", syncHeaderHeightVar);
     }
 
-    function isMobileLike() {
-      return window.matchMedia("(max-width: 900px)").matches;
+    function syncHeaderHeightVar() {
+      const header = document.querySelector("header");
+      const h = header ? header.getBoundingClientRect().height : 0;
+      document.documentElement.style.setProperty("--headerH", `${Math.round(h)}px`);
     }
 
-    function lockPageScroll() {
-      if (isLocked) return;
-      scrollYBeforeLock = window.scrollY || document.documentElement.scrollTop || 0;
-      document.body.classList.add("locked");
-      document.body.style.top = `-${scrollYBeforeLock}px`;
-      els.lockBadge.classList.remove("hidden");
-      isLocked = true;
+    function applyDefaultView() {
+      const saved = (localStorage.getItem(STORAGE_KEY_VIEW) || "").toLowerCase();
+      const isDesktop = window.matchMedia("(min-width: 900px)").matches;
+      setView(saved === "cards" || saved === "table" ? saved : (isDesktop ? "table" : "cards"), { persist: false });
     }
 
-    function unlockPageScroll() {
-      if (!isLocked) return;
-      document.body.classList.remove("locked");
-      document.body.style.top = "";
-      window.scrollTo(0, scrollYBeforeLock);
-      els.lockBadge.classList.add("hidden");
-      isLocked = false;
+    function setView(mode, opts = { persist: true }) {
+      const m = mode === "table" ? "table" : "cards";
+      const persist = opts.persist !== false;
+
+      els.btnCards.classList.toggle("active", m === "cards");
+      els.btnTable.classList.toggle("active", m === "table");
+
+      els.cards.classList.toggle("hidden", m !== "cards");
+      els.tableWrap.classList.toggle("hidden", m !== "table");
+
+      if (persist) localStorage.setItem(STORAGE_KEY_VIEW, m);
+      syncHeaderHeightVar();
     }
 
-    function scrollToTable() {
-      const headerH = document.querySelector("header")?.getBoundingClientRect().height || 0;
-      const rect = els.tableWrap.getBoundingClientRect();
-      const y = (window.scrollY || 0) + rect.top - headerH - 8;
-      window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+    function setupInfiniteScroll() {
+      if (observer) observer.disconnect();
+
+      observer = new IntersectionObserver((entries) => {
+        if (!entries.some(e => e.isIntersecting)) return;
+        if (visibleLimit >= filtered.length) return;
+
+        visibleLimit = Math.min(filtered.length, visibleLimit + PAGE_SIZE);
+        paint();
+      }, { root: null, rootMargin: "1200px 0px", threshold: 0 });
+
+      observer.observe(els.sentinel);
     }
 
     function wire() {
@@ -518,7 +504,7 @@
         }
       });
 
-      els.tableHead.addEventListener("click", (e) => {
+      els.thead.addEventListener("click", (e) => {
         const th = e.target.closest("th");
         if (!th) return;
         const key = th.getAttribute("data-key");
@@ -531,74 +517,11 @@
         render({ reset: true });
       });
 
-      const maybeToggleTopBtn = () => {
-        const pageY = window.scrollY || document.documentElement.scrollTop || 0;
-        const tableY = els.tableScroll ? els.tableScroll.scrollTop : 0;
-        const y = Math.max(pageY, tableY);
-        els.toTop.classList.toggle("show", y > 450);
-      };
-
-      window.addEventListener("scroll", maybeToggleTopBtn, { passive: true });
-      els.tableScroll.addEventListener("scroll", maybeToggleTopBtn, { passive: true });
-
-      els.toTop.addEventListener("click", () => {
-        els.tableScroll.scrollTo({ top: 0, behavior: "smooth" });
-        window.scrollTo({ top: 0, behavior: "smooth" });
+      // Card title expand
+      els.cards.addEventListener("click", (e) => {
+        const t = e.target.closest(".title");
+        if (t) t.classList.toggle("expanded");
       });
-    }
-
-    function syncHeaderHeightVar() {
-      const header = document.querySelector("header");
-      const h = header ? header.getBoundingClientRect().height : 0;
-      document.documentElement.style.setProperty("--headerH", `${Math.round(h)}px`);
-    }
-
-    function applyDefaultView() {
-      const saved = (localStorage.getItem(STORAGE_KEY_VIEW) || "").toLowerCase();
-      if (saved === "cards" || saved === "table") { setView(saved, { persist: false }); return; }
-      const isDesktop = window.matchMedia("(min-width: 900px)").matches;
-      setView(isDesktop ? "table" : "cards", { persist: false });
-    }
-
-    function setView(mode, opts = { persist: true }) {
-      const m = mode === "table" ? "table" : "cards";
-      const persist = opts.persist !== false;
-
-      els.btnCards.classList.toggle("active", m === "cards");
-      els.btnTable.classList.toggle("active", m === "table");
-
-      els.cards.classList.toggle("hidden", m !== "cards");
-      els.tableWrap.classList.toggle("hidden", m !== "table");
-
-      if (persist) localStorage.setItem(STORAGE_KEY_VIEW, m);
-
-      // Mobile behavior: auto-scroll + lock page scroll in table mode
-      if (m === "table" && isMobileLike()) {
-        unlockPageScroll();            // ensure clean slate
-        scrollToTable();
-        setTimeout(() => {
-          lockPageScroll();
-          els.tableScroll.focus?.();
-        }, 420);
-      } else {
-        unlockPageScroll();
-      }
-
-      syncHeaderHeightVar();
-    }
-
-    function setupInfiniteScroll() {
-      if (observer) observer.disconnect();
-
-      observer = new IntersectionObserver((entries) => {
-        if (!entries.some(e => e.isIntersecting)) return;
-        if (visibleLimit >= filtered.length) return;
-
-        visibleLimit = Math.min(filtered.length, visibleLimit + PAGE_SIZE);
-        paint();
-      }, { root: null, rootMargin: "900px 0px", threshold: 0 });
-
-      observer.observe(els.sentinel);
     }
 
     function render({ reset }) {
@@ -655,6 +578,7 @@
         if (av < bv) return -1 * dir;
         if (av > bv) return  1 * dir;
 
+        // tie-break: date asc
         const da = a._date instanceof Date ? a._date.getTime() : 0;
         const db = b._date instanceof Date ? b._date.getTime() : 0;
         if (da !== db) return da - db;
@@ -694,12 +618,12 @@
         "URL": "Link",
       }[k] || k);
 
-      const keys = ["DATE","STATE","EVENT NAME","HOSTED BY","COST","DURATION","GRADES","URL"];
-      for (const k of keys) {
-        const el = document.getElementById("s_" + k);
-        if (!el) continue;
-        el.textContent = (k === sortKey) ? (sortDir === "asc" ? "▲" : "▼") : "";
-      }
+      els.ths.forEach(th => {
+        const key = th.getAttribute("data-key");
+        const span = th.querySelector(".sort");
+        if (!span) return;
+        span.textContent = (key === sortKey) ? (sortDir === "asc" ? "▲" : "▼") : "";
+      });
 
       const special =
         (sortKey === "DATE") ? (sortDir === "asc" ? "Old→New" : "New→Old") :
@@ -740,10 +664,6 @@
           </div>
         `;
       }).join("");
-
-      els.cards.querySelectorAll(".title").forEach((el) => {
-        el.addEventListener("click", () => el.classList.toggle("expanded"));
-      });
     }
 
     function renderTable(rows) {
@@ -898,12 +818,6 @@
         .replaceAll("'", "&#039;");
     }
     function escapeAttr(s) { return escapeHtml(s).replaceAll("`", "&#096;"); }
-
-    // Set initial sort indicators after init assigns handlers
-    function updateSortIndicatorsWrapper() {
-      updateSortIndicators();
-    }
-    updateSortIndicatorsWrapper();
   </script>
 </body>
 </html>
