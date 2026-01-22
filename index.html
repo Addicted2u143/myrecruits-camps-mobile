@@ -4,25 +4,44 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Football Camps & Combines</title>
+
   <style>
     :root {
       --shadow: 0 6px 18px rgba(0,0,0,.08);
       --headerH: 0px;         /* set by JS */
-      --pagePad: 14px;        /* matches main padding */
-      --tableGap: 10px;       /* breathing room under header */
+      --pagePad: 14px;
+      --tableGap: 10px;
       --tableMaxH: calc(100vh - var(--headerH) - (var(--pagePad) * 2) - var(--tableGap));
+      --tableMinW: 860px;
     }
 
     * { box-sizing: border-box; }
-    html, body { height: 100%; width: 100%; max-width: 100%; overflow-x: hidden; }
+
+    /* Kill horizontal bounce (iOS Safari friendly) */
+    html, body {
+      height: 100%;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      overscroll-behavior-x: none;
+      background: #fafafa;
+    }
+    @supports (overflow: clip) { html, body { overflow-x: clip; } }
+
     body {
       margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background: #fafafa;
       color: #111;
-      min-height: 100vh;
-      overflow-x: hidden;
-      position: relative;
+    }
+
+    /* Mobile scroll-lock when table view is active */
+    body.locked {
+      position: fixed;
+      left: 0;
+      right: 0;
+      width: 100%;
+      overflow: hidden;
+      touch-action: none;
     }
 
     header {
@@ -31,13 +50,17 @@
       z-index: 50;
       background: #fff;
       border-bottom: 1px solid #eee;
-      overflow-x: hidden;
     }
 
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 14px; }
+    .wrap {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
     h1 { font-size: 18px; margin: 0 0 10px; }
 
-    /* Controls */
     .controls { display: grid; gap: 10px; align-items: end; width: 100%; }
     .controls > * { min-width: 0; }
     .controls label { display: block; font-size: 12px; color: #444; margin-bottom: 6px; }
@@ -51,12 +74,8 @@
       min-width: 0;
     }
 
-    @media (min-width: 1100px) {
-      .controls { grid-template-columns: 2fr 160px 220px 170px 170px 190px; }
-    }
-    @media (max-width: 1099px) {
-      .controls { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-    }
+    @media (min-width: 1100px) { .controls { grid-template-columns: 2fr 160px 220px 170px 170px 190px; } }
+    @media (max-width: 1099px) { .controls { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); } }
 
     .pillWrap { display: flex; flex-direction: column; min-width: 0; }
     .pill {
@@ -74,7 +93,6 @@
     }
     .pill input { width: 18px; height: 18px; flex: 0 0 auto; }
 
-    /* Meta + Actions: stack on small screens so toggle never disappears */
     .metaRow {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -124,14 +142,18 @@
       white-space: nowrap;
     }
 
-    main { padding: var(--pagePad); padding-bottom: 60px; overflow-x: hidden; max-width: 100%; }
+    main {
+      width: 100%;
+      max-width: 100%;
+      padding: var(--pagePad);
+      padding-bottom: 70px;
+    }
 
     /* Cards */
-    .grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 12px; width: 100%; }
+    .grid { width: 100%; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 12px; }
     .card { background: #fff; border: 1px solid #eee; border-radius: 16px; box-shadow: var(--shadow); padding: 14px; width: 100%; }
     .row1 { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
     .left { min-width: 0; }
-
     .title {
       font-size: 16px;
       font-weight: 900;
@@ -181,14 +203,10 @@
       font-size: 14px;
     }
 
-    /* Table containment to prevent overflow/bounce */
-    .tableOuter { width: 100%; max-width: 100%; overflow-x: hidden; }
-    .tableWrap { max-width: 1100px; margin: 0 auto; width: 100%; }
-    @media (min-width: 900px) {
-      .tableWrap { max-width: none; margin: 0; }
-    }
+    /* Table containment */
+    .tableOuter { width: 100%; max-width: 100%; overflow: hidden; }
+    .tableWrap { width: 100%; max-width: 1100px; margin: 0 auto; }
 
-    /* Table scroll area: vertical + horizontal, near-full-screen on mobile */
     .tableScroll {
       background: #fff;
       border: 1px solid #eee;
@@ -199,30 +217,43 @@
       width: 100%;
       max-width: 100%;
       max-height: var(--tableMaxH);
+      overscroll-behavior: contain;
+      contain: layout paint;
     }
 
-    /* Make mobile table taller */
     @media (max-width: 700px) {
-      :root { --tableGap: 6px; }
+      :root { --tableGap: 6px; --tableMinW: 780px; }
       .tableScroll { max-height: calc(100vh - var(--headerH) - 10px); }
     }
 
-    table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    /* Sticky header reliability fix (Safari): use separate + sticky THEAD */
+    table {
+      width: 100%;
+      min-width: var(--tableMinW);
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
     th, td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; vertical-align: top; }
 
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
     thead th {
       text-align: left;
       font-size: 12px;
       color: #444;
       background: #fbfbfb;
       position: sticky;
-      top: 0;                 /* sticky inside .tableScroll */
-      z-index: 3;
+      top: 0;
+      z-index: 11;
       cursor: pointer;
       user-select: none;
       white-space: nowrap;
+      border-bottom: 1px solid #eee;
     }
-
     thead th .sort { font-weight: 900; margin-left: 6px; opacity: .6; font-size: 12px; }
 
     tr:hover td { background: #fcfcfc; }
@@ -231,6 +262,7 @@
     .hidden { display: none !important; }
 
     .empty {
+      width: 100%;
       max-width: 1100px;
       margin: 14px auto 0;
       padding: 14px;
@@ -244,9 +276,7 @@
     }
 
     #sentinel { height: 1px; width: 100%; max-width: 1100px; margin: 0 auto; }
-    @media (min-width: 900px) { #sentinel { max-width: none; } }
 
-    /* Back to top button */
     .toTop {
       position: fixed;
       right: 14px;
@@ -265,6 +295,7 @@
     .toTop.show { display: inline-flex; align-items: center; gap: 8px; }
   </style>
 </head>
+
 <body>
   <header>
     <div class="wrap">
@@ -310,6 +341,7 @@
           <span class="badge" id="count">Loading…</span>
           <span class="badge" id="updated"></span>
           <span class="badge" id="sortLabel"></span>
+          <span class="badge hidden" id="lockBadge">Table scroll locked</span>
         </div>
 
         <div class="actionsRow">
@@ -327,7 +359,7 @@
     <div class="grid" id="cards"></div>
 
     <div class="tableOuter">
-      <div class="tableWrap" id="tableWrap">
+      <div class="tableWrap hidden" id="tableWrap">
         <div class="tableScroll" id="tableScroll">
           <table>
             <thead>
@@ -357,7 +389,7 @@
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMvr__OkB3wgl4GvpZLJ61u_MfemESGiLBKEwufYFVwj_S7jiHFZraACGJRJogY6I29r17w34EGzVF/pub?gid=700608427&single=true&output=csv";
     const REQUIRED = ["STATE", "DATE", "EVENT NAME", "HOSTED BY", "URL"];
-    const PAGE_SIZE = 50;
+    const PAGE_SIZE = 60;
     const STORAGE_KEY_VIEW = "myrecruits_view_mode";
 
     const els = {
@@ -370,6 +402,7 @@
       count: document.getElementById("count"),
       updated: document.getElementById("updated"),
       sortLabel: document.getElementById("sortLabel"),
+      lockBadge: document.getElementById("lockBadge"),
       cards: document.getElementById("cards"),
       rows: document.getElementById("rows"),
       tableWrap: document.getElementById("tableWrap"),
@@ -388,9 +421,11 @@
     let visibleLimit = PAGE_SIZE;
     let observer = null;
 
-    // Default sort: Date asc (not forced)
     let sortKey = "DATE";
     let sortDir = "asc";
+
+    let scrollYBeforeLock = 0;
+    let isLocked = false;
 
     init();
 
@@ -398,7 +433,6 @@
       const started = performance.now();
       const csv = await fetch(CSV_URL, { cache: "no-store" }).then(r => r.text());
       const parsed = parseCsv(csv);
-
       validateHeaders(parsed.headers);
 
       all = parsed.rows
@@ -420,6 +454,35 @@
 
       window.addEventListener("resize", syncHeaderHeightVar);
       window.addEventListener("orientationchange", syncHeaderHeightVar);
+    }
+
+    function isMobileLike() {
+      return window.matchMedia("(max-width: 900px)").matches;
+    }
+
+    function lockPageScroll() {
+      if (isLocked) return;
+      scrollYBeforeLock = window.scrollY || document.documentElement.scrollTop || 0;
+      document.body.classList.add("locked");
+      document.body.style.top = `-${scrollYBeforeLock}px`;
+      els.lockBadge.classList.remove("hidden");
+      isLocked = true;
+    }
+
+    function unlockPageScroll() {
+      if (!isLocked) return;
+      document.body.classList.remove("locked");
+      document.body.style.top = "";
+      window.scrollTo(0, scrollYBeforeLock);
+      els.lockBadge.classList.add("hidden");
+      isLocked = false;
+    }
+
+    function scrollToTable() {
+      const headerH = document.querySelector("header")?.getBoundingClientRect().height || 0;
+      const rect = els.tableWrap.getBoundingClientRect();
+      const y = (window.scrollY || 0) + rect.top - headerH - 8;
+      window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
     }
 
     function wire() {
@@ -449,12 +512,15 @@
         sortDir = "asc";
         updateSortIndicators();
         render({ reset: true });
+
+        if (!els.tableWrap.classList.contains("hidden")) {
+          els.tableScroll.scrollTo({ top: 0, behavior: "smooth" });
+        }
       });
 
       els.tableHead.addEventListener("click", (e) => {
         const th = e.target.closest("th");
         if (!th) return;
-
         const key = th.getAttribute("data-key");
         if (!key) return;
 
@@ -465,7 +531,6 @@
         render({ reset: true });
       });
 
-      // Back to top: show when user scrolls page OR the table scroller
       const maybeToggleTopBtn = () => {
         const pageY = window.scrollY || document.documentElement.scrollTop || 0;
         const tableY = els.tableScroll ? els.tableScroll.scrollTop : 0;
@@ -474,11 +539,10 @@
       };
 
       window.addEventListener("scroll", maybeToggleTopBtn, { passive: true });
-      if (els.tableScroll) els.tableScroll.addEventListener("scroll", maybeToggleTopBtn, { passive: true });
+      els.tableScroll.addEventListener("scroll", maybeToggleTopBtn, { passive: true });
 
       els.toTop.addEventListener("click", () => {
-        // scroll both contexts to top
-        if (els.tableScroll) els.tableScroll.scrollTo({ top: 0, behavior: "smooth" });
+        els.tableScroll.scrollTo({ top: 0, behavior: "smooth" });
         window.scrollTo({ top: 0, behavior: "smooth" });
       });
     }
@@ -492,7 +556,6 @@
     function applyDefaultView() {
       const saved = (localStorage.getItem(STORAGE_KEY_VIEW) || "").toLowerCase();
       if (saved === "cards" || saved === "table") { setView(saved, { persist: false }); return; }
-
       const isDesktop = window.matchMedia("(min-width: 900px)").matches;
       setView(isDesktop ? "table" : "cards", { persist: false });
     }
@@ -508,19 +571,32 @@
       els.tableWrap.classList.toggle("hidden", m !== "table");
 
       if (persist) localStorage.setItem(STORAGE_KEY_VIEW, m);
+
+      // Mobile behavior: auto-scroll + lock page scroll in table mode
+      if (m === "table" && isMobileLike()) {
+        unlockPageScroll();            // ensure clean slate
+        scrollToTable();
+        setTimeout(() => {
+          lockPageScroll();
+          els.tableScroll.focus?.();
+        }, 420);
+      } else {
+        unlockPageScroll();
+      }
+
+      syncHeaderHeightVar();
     }
 
     function setupInfiniteScroll() {
       if (observer) observer.disconnect();
 
       observer = new IntersectionObserver((entries) => {
-        const hit = entries.some(e => e.isIntersecting);
-        if (!hit) return;
+        if (!entries.some(e => e.isIntersecting)) return;
         if (visibleLimit >= filtered.length) return;
 
         visibleLimit = Math.min(filtered.length, visibleLimit + PAGE_SIZE);
         paint();
-      }, { root: null, rootMargin: "700px 0px", threshold: 0 });
+      }, { root: null, rootMargin: "900px 0px", threshold: 0 });
 
       observer.observe(els.sentinel);
     }
@@ -607,33 +683,28 @@
     }
 
     function updateSortIndicators() {
-      const pretty = (k) => {
-        const map = {
-          "DATE": "Date",
-          "STATE": "State",
-          "EVENT NAME": "Event",
-          "HOSTED BY": "Hosted by",
-          "COST": "Cost",
-          "DURATION": "Duration",
-          "GRADES": "Grades",
-          "URL": "Link",
-        };
-        return map[k] || k;
-      };
+      const pretty = (k) => ({
+        "DATE": "Date",
+        "STATE": "State",
+        "EVENT NAME": "Event",
+        "HOSTED BY": "Hosted by",
+        "COST": "Cost",
+        "DURATION": "Duration",
+        "GRADES": "Grades",
+        "URL": "Link",
+      }[k] || k);
 
       const keys = ["DATE","STATE","EVENT NAME","HOSTED BY","COST","DURATION","GRADES","URL"];
       for (const k of keys) {
         const el = document.getElementById("s_" + k);
         if (!el) continue;
-        if (k !== sortKey) { el.textContent = ""; continue; }
-        el.textContent = (sortDir === "asc" ? "▲" : "▼");
+        el.textContent = (k === sortKey) ? (sortDir === "asc" ? "▲" : "▼") : "";
       }
 
-      const dirText = (sortDir === "asc") ? "A→Z" : "Z→A";
       const special =
         (sortKey === "DATE") ? (sortDir === "asc" ? "Old→New" : "New→Old") :
         (sortKey === "COST") ? (sortDir === "asc" ? "Low→High" : "High→Low") :
-        dirText;
+        (sortDir === "asc" ? "A→Z" : "Z→A");
 
       els.sortLabel.textContent = `Sort: ${pretty(sortKey)} (${special})`;
     }
@@ -827,6 +898,12 @@
         .replaceAll("'", "&#039;");
     }
     function escapeAttr(s) { return escapeHtml(s).replaceAll("`", "&#096;"); }
+
+    // Set initial sort indicators after init assigns handlers
+    function updateSortIndicatorsWrapper() {
+      updateSortIndicators();
+    }
+    updateSortIndicatorsWrapper();
   </script>
 </body>
 </html>
