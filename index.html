@@ -6,19 +6,17 @@
   <title>Football Camps & Combines</title>
 
   <style>
-    :root {
+    :root{
       --shadow: 0 6px 18px rgba(0,0,0,.08);
-      --headerH: 0px;
+      --headerH: 0px;           /* set by JS */
       --pagePad: 14px;
-      --tableGap: 10px;
-      --tableMaxH: calc(100vh - var(--headerH) - (var(--pagePad) * 2) - var(--tableGap));
       --tableMinW: 860px;
     }
 
-    * { box-sizing: border-box; }
+    *{ box-sizing: border-box; }
 
     /* Kill horizontal bounce */
-    html, body {
+    html, body{
       height: 100%;
       width: 100%;
       max-width: 100%;
@@ -26,25 +24,15 @@
       overscroll-behavior-x: none;
       background: #fafafa;
     }
-    @supports (overflow: clip) { html, body { overflow-x: clip; } }
+    @supports (overflow: clip){ html, body{ overflow-x: clip; } }
 
-    body {
+    body{
       margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       color: #111;
     }
 
-    /* Optional mobile scroll-lock when table view active */
-    body.locked {
-      position: fixed;
-      left: 0;
-      right: 0;
-      width: 100%;
-      overflow: hidden;
-      touch-action: none;
-    }
-
-    header {
+    header{
       position: sticky;
       top: 0;
       z-index: 50;
@@ -52,19 +40,20 @@
       border-bottom: 1px solid #eee;
     }
 
-    .wrap {
+    .wrap{
       width: 100%;
       max-width: 1100px;
       margin: 0 auto;
       padding: 14px;
     }
 
-    h1 { font-size: 18px; margin: 0 0 10px; }
+    h1{ font-size: 18px; margin: 0 0 10px; }
 
-    .controls { display: grid; gap: 10px; align-items: end; width: 100%; }
-    .controls > * { min-width: 0; }
-    .controls label { display: block; font-size: 12px; color: #444; margin-bottom: 6px; }
-    .controls input, .controls select {
+    /* Controls */
+    .controls{ display: grid; gap: 10px; align-items: end; width: 100%; }
+    .controls > *{ min-width: 0; }
+    .controls label{ display:block; font-size:12px; color:#444; margin-bottom:6px; }
+    .controls input, .controls select{
       width: 100%;
       padding: 10px;
       border: 1px solid #ddd;
@@ -74,207 +63,241 @@
       min-width: 0;
     }
 
-    @media (min-width: 1100px) { .controls { grid-template-columns: 2fr 160px 220px 170px 170px 190px; } }
-    @media (max-width: 1099px) { .controls { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); } }
-
-    .pillWrap { display: flex; flex-direction: column; min-width: 0; }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      border: 1px solid #ddd;
-      border-radius: 999px;
-      background: #fff;
-      font-size: 14px;
-      width: 100%;
-      justify-content: flex-start;
-      user-select: none;
+    @media (min-width: 1100px){
+      .controls{ grid-template-columns: 2fr 160px 220px 170px 170px 190px; }
     }
-    .pill input { width: 18px; height: 18px; flex: 0 0 auto; }
+    @media (max-width: 1099px){
+      .controls{ grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+    }
 
-    .metaRow {
-      display: grid;
+    .pillWrap{ display:flex; flex-direction:column; min-width:0; }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border:1px solid #ddd;
+      border-radius:999px;
+      background:#fff;
+      font-size:14px;
+      width:100%;
+      user-select:none;
+    }
+    .pill input{ width:18px; height:18px; flex:0 0 auto; }
+
+    .metaRow{
+      display:grid;
       grid-template-columns: 1fr auto;
-      gap: 10px;
-      margin-top: 10px;
-      align-items: center;
-      width: 100%;
+      gap:10px;
+      margin-top:10px;
+      align-items:center;
+      width:100%;
     }
-    @media (max-width: 700px) {
-      .metaRow { grid-template-columns: 1fr; }
-      .actionsRow { justify-content: flex-start; }
-    }
-
-    .meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #555; }
-    .badge { padding: 6px 10px; border-radius: 999px; background: #fff; border: 1px solid #eee; }
-
-    .actionsRow { display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
-
-    .viewToggle {
-      display: inline-flex;
-      border: 1px solid #ddd;
-      border-radius: 999px;
-      overflow: hidden;
-      background: #fff;
-      max-width: 100%;
-    }
-    .viewToggle button {
-      border: 0;
-      background: transparent;
-      padding: 8px 12px;
-      font-weight: 900;
-      font-size: 12px;
-      cursor: pointer;
-      color: #333;
-      white-space: nowrap;
-    }
-    .viewToggle button.active { background: #111; color: #fff; }
-
-    .resetBtn {
-      border: 1px solid #ddd;
-      background: #fff;
-      padding: 8px 12px;
-      border-radius: 12px;
-      font-weight: 900;
-      font-size: 12px;
-      cursor: pointer;
-      white-space: nowrap;
+    @media (max-width:700px){
+      .metaRow{ grid-template-columns: 1fr; }
+      .actionsRow{ justify-content:flex-start; }
     }
 
-    main {
-      width: 100%;
-      max-width: 100%;
+    .meta{ display:flex; gap:10px; flex-wrap:wrap; font-size:12px; color:#555; }
+    .badge{ padding:6px 10px; border-radius:999px; background:#fff; border:1px solid #eee; }
+
+    .actionsRow{
+      display:inline-flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .viewToggle{
+      display:inline-flex;
+      border:1px solid #ddd;
+      border-radius:999px;
+      overflow:hidden;
+      background:#fff;
+      max-width:100%;
+    }
+    .viewToggle button{
+      border:0;
+      background:transparent;
+      padding:8px 12px;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      color:#333;
+      white-space:nowrap;
+    }
+    .viewToggle button.active{ background:#111; color:#fff; }
+
+    .resetBtn{
+      border:1px solid #ddd;
+      background:#fff;
+      padding:8px 12px;
+      border-radius:12px;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    /* Main layout */
+    main{
+      width:100%;
+      max-width:100%;
       padding: var(--pagePad);
       padding-bottom: 70px;
     }
 
+    /* TABLE FOCUS MODE:
+       - page stops scrolling (no “table moving around”)
+       - table fills viewport height under header
+    */
+    body.table-focus{
+      height: 100vh;
+      overflow: hidden; /* IMPORTANT */
+    }
+    body.table-focus main{
+      height: calc(100vh - var(--headerH));
+      overflow: hidden; /* IMPORTANT */
+      padding-bottom: 14px;
+    }
+
     /* Cards */
-    .grid { width: 100%; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 12px; }
-    .card { background: #fff; border: 1px solid #eee; border-radius: 16px; box-shadow: var(--shadow); padding: 14px; width: 100%; }
-    .row1 { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
-    .left { min-width: 0; }
-
-    .title {
-      font-size: 16px;
-      font-weight: 900;
-      margin: 0 0 6px;
-      line-height: 1.2;
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      overflow: hidden;
-      word-break: break-word;
-      cursor: pointer;
+    .grid{ width:100%; max-width:1100px; margin:0 auto; display:grid; grid-template-columns:1fr; gap:12px; }
+    .card{ background:#fff; border:1px solid #eee; border-radius:16px; box-shadow:var(--shadow); padding:14px; width:100%; }
+    .row1{ display:flex; justify-content:space-between; gap:10px; align-items:start; }
+    .left{ min-width:0; }
+    .title{
+      font-size:16px;
+      font-weight:900;
+      margin:0 0 6px;
+      line-height:1.2;
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      overflow:hidden;
+      word-break:break-word;
+      cursor:pointer;
     }
-    .title.expanded { display: block; -webkit-line-clamp: unset; }
+    .title.expanded{ display:block; -webkit-line-clamp:unset; }
+    .sub{ font-size:13px; color:#444; margin:0; }
 
-    .sub { font-size: 13px; color: #444; margin: 0; }
-
-    .stamp {
-      display: inline-flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 4px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid #eee;
-      background: #fbfbfb;
-      min-width: 132px;
-      max-width: 170px;
-      flex: 0 0 auto;
+    .stamp{
+      display:inline-flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:4px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid #eee;
+      background:#fbfbfb;
+      min-width:132px;
+      max-width:170px;
+      flex:0 0 auto;
     }
-    .stampDate { font-weight: 900; font-size: 14px; line-height: 1.1; text-align: right; }
-    .stampState { font-size: 12px; color: #666; font-weight: 800; letter-spacing: .02em; }
+    .stampDate{ font-weight:900; font-size:14px; line-height:1.1; text-align:right; }
+    .stampState{ font-size:12px; color:#666; font-weight:800; letter-spacing:.02em; }
 
-    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-    .chip { font-size: 12px; padding: 6px 10px; border-radius: 999px; background: #f6f6f6; border: 1px solid #eee; white-space: nowrap; }
+    .chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+    .chip{ font-size:12px; padding:6px 10px; border-radius:999px; background:#f6f6f6; border:1px solid #eee; white-space:nowrap; }
 
-    .actions { margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid #ddd;
-      background: #fff;
-      text-decoration: none;
-      color: #111;
-      font-weight: 900;
-      font-size: 14px;
+    .actions{ margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; }
+    .btn{
+      display:inline-flex;
+      justify-content:center;
+      align-items:center;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #ddd;
+      background:#fff;
+      text-decoration:none;
+      color:#111;
+      font-weight:900;
+      font-size:14px;
     }
 
     /* Table containment */
-    .tableOuter { width: 100%; max-width: 100%; overflow: hidden; }
-    .tableWrap { width: 100%; max-width: 1100px; margin: 0 auto; }
+    .tableOuter{ width:100%; max-width:100%; overflow:hidden; }
+    .tableWrap{ width:100%; max-width:1100px; margin:0 auto; }
+    body.table-focus .tableWrap{ max-width: none; margin: 0; } /* use full width in focus mode */
 
-    .tableScroll {
-      background: #fff;
-      border: 1px solid #eee;
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
-      width: 100%;
-      max-width: 100%;
-      max-height: var(--tableMaxH);
-      overscroll-behavior: contain;
+    .tableScroll{
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:16px;
+      box-shadow:var(--shadow);
+      overflow:auto;                 /* THIS is the scroll container */
+      -webkit-overflow-scrolling:touch;
+      width:100%;
+      max-width:100%;
+      overscroll-behavior:contain;
       contain: layout paint;
+      position: relative;            /* helps sticky in Safari */
     }
 
-    @media (max-width: 700px) {
-      :root { --tableGap: 6px; --tableMinW: 780px; }
-      .tableScroll { max-height: calc(100vh - var(--headerH) - 10px); }
+    /* In table-focus mode, make it BIG (no “2 rows only”) */
+    body.table-focus .tableScroll{
+      height: calc(100vh - var(--headerH) - (var(--pagePad) * 2));
+      max-height: none;
     }
 
-    /* Sticky header reliability fix */
-    table {
-      width: 100%;
+    @media (max-width:700px){
+      :root{ --tableMinW: 780px; }
+      body.table-focus .tableScroll{
+        height: calc(100vh - var(--headerH) - 18px);
+      }
+    }
+
+    /* Sticky header reliability: separate + sticky THEAD/TH */
+    table{
+      width:100%;
       min-width: var(--tableMinW);
       border-collapse: separate;
       border-spacing: 0;
     }
 
-    th, td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; vertical-align: top; }
+    th, td{ padding:12px; border-bottom:1px solid #f0f0f0; font-size:13px; vertical-align:top; }
 
-    thead { position: sticky; top: 0; z-index: 10; }
-    thead th {
-      text-align: left;
-      font-size: 12px;
-      color: #444;
-      background: #fbfbfb;
+    thead{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    thead th{
       position: sticky;
       top: 0;
       z-index: 11;
-      cursor: pointer;
-      user-select: none;
-      white-space: nowrap;
-      border-bottom: 1px solid #eee;
+      background:#fbfbfb;
+      border-bottom:1px solid #eee;
+      text-align:left;
+      font-size:12px;
+      color:#444;
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    thead th .sort{ font-weight:900; margin-left:6px; opacity:.6; font-size:12px; }
+
+    tr:hover td{ background:#fcfcfc; }
+    a{ color: inherit; }
+
+    .hidden{ display:none !important; }
+
+    .empty{
+      width:100%;
+      max-width:1100px;
+      margin:14px auto 0;
+      padding:14px;
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:16px;
+      box-shadow:var(--shadow);
+      color:#444;
+      font-size:14px;
+      font-weight:700;
     }
 
-    thead th .sort { font-weight: 900; margin-left: 6px; opacity: .6; font-size: 12px; }
-
-    tr:hover td { background: #fcfcfc; }
-    a { color: inherit; }
-
-    .hidden { display: none !important; }
-
-    .empty {
-      width: 100%;
-      max-width: 1100px;
-      margin: 14px auto 0;
-      padding: 14px;
-      background: #fff;
-      border: 1px solid #eee;
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-      color: #444;
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    #sentinel { height: 1px; width: 100%; max-width: 1100px; margin: 0 auto; }
+    #sentinel{ height:1px; width:100%; max-width:1100px; margin:0 auto; }
   </style>
 </head>
 
@@ -368,7 +391,7 @@
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMvr__OkB3wgl4GvpZLJ61u_MfemESGiLBKEwufYFVwj_S7jiHFZraACGJRJogY6I29r17w34EGzVF/pub?gid=700608427&single=true&output=csv";
     const REQUIRED = ["STATE", "DATE", "EVENT NAME", "HOSTED BY", "URL"];
-    const PAGE_SIZE = 80;
+    const PAGE_SIZE = 100;
     const STORAGE_KEY_VIEW = "myrecruits_view_mode";
 
     const els = {
@@ -432,15 +455,23 @@
     }
 
     function syncHeaderHeightVar() {
-      const header = document.querySelector("header");
-      const h = header ? header.getBoundingClientRect().height : 0;
-      document.documentElement.style.setProperty("--headerH", `${Math.round(h)}px`);
+      // Defer to ensure layout settled (helps Safari)
+      requestAnimationFrame(() => {
+        const header = document.querySelector("header");
+        const h = header ? header.getBoundingClientRect().height : 0;
+        document.documentElement.style.setProperty("--headerH", `${Math.round(h)}px`);
+      });
+    }
+
+    function isDesktop() {
+      return window.matchMedia("(min-width: 900px)").matches;
     }
 
     function applyDefaultView() {
       const saved = (localStorage.getItem(STORAGE_KEY_VIEW) || "").toLowerCase();
-      const isDesktop = window.matchMedia("(min-width: 900px)").matches;
-      setView(saved === "cards" || saved === "table" ? saved : (isDesktop ? "table" : "cards"), { persist: false });
+      const fallback = isDesktop() ? "table" : "cards";
+      const mode = (saved === "cards" || saved === "table") ? saved : fallback;
+      setView(mode, { persist: false });
     }
 
     function setView(mode, opts = { persist: true }) {
@@ -453,21 +484,23 @@
       els.cards.classList.toggle("hidden", m !== "cards");
       els.tableWrap.classList.toggle("hidden", m !== "table");
 
+      // Table focus mode: page stops scrolling, table becomes the scroller
+      document.body.classList.toggle("table-focus", m === "table");
+
       if (persist) localStorage.setItem(STORAGE_KEY_VIEW, m);
+
       syncHeaderHeightVar();
+      if (m === "table") els.tableScroll.scrollTop = 0;
     }
 
     function setupInfiniteScroll() {
       if (observer) observer.disconnect();
-
       observer = new IntersectionObserver((entries) => {
         if (!entries.some(e => e.isIntersecting)) return;
         if (visibleLimit >= filtered.length) return;
-
         visibleLimit = Math.min(filtered.length, visibleLimit + PAGE_SIZE);
         paint();
       }, { root: null, rootMargin: "1200px 0px", threshold: 0 });
-
       observer.observe(els.sentinel);
     }
 
@@ -499,9 +532,7 @@
         updateSortIndicators();
         render({ reset: true });
 
-        if (!els.tableWrap.classList.contains("hidden")) {
-          els.tableScroll.scrollTo({ top: 0, behavior: "smooth" });
-        }
+        if (!els.tableWrap.classList.contains("hidden")) els.tableScroll.scrollTop = 0;
       });
 
       els.thead.addEventListener("click", (e) => {
@@ -517,7 +548,6 @@
         render({ reset: true });
       });
 
-      // Card title expand
       els.cards.addEventListener("click", (e) => {
         const t = e.target.closest(".title");
         if (t) t.classList.toggle("expanded");
@@ -560,64 +590,35 @@
 
     function paint() {
       const slice = filtered.slice(0, visibleLimit);
-
       els.count.textContent = `Showing ${slice.length} of ${filtered.length} event(s)`;
       els.empty.classList.toggle("hidden", filtered.length !== 0);
-
       renderCards(slice);
       renderTable(slice);
     }
 
     function sortRows(rows) {
       const dir = (sortDir === "desc") ? -1 : 1;
-
       rows.sort((a, b) => {
         const av = getSortValue(a, sortKey);
         const bv = getSortValue(b, sortKey);
-
         if (av < bv) return -1 * dir;
         if (av > bv) return  1 * dir;
-
-        // tie-break: date asc
-        const da = a._date instanceof Date ? a._date.getTime() : 0;
-        const db = b._date instanceof Date ? b._date.getTime() : 0;
-        if (da !== db) return da - db;
-
-        return String(a["EVENT NAME"] || "").localeCompare(String(b["EVENT NAME"] || ""));
+        return (a._date?.getTime?.() || 0) - (b._date?.getTime?.() || 0);
       });
     }
 
     function getSortValue(r, key) {
       if (key === "DATE") return (r._date instanceof Date ? r._date.getTime() : 0);
-      if (key === "STATE") return (r.STATE || "");
-      if (key === "EVENT NAME") return (r["EVENT NAME"] || "");
-      if (key === "HOSTED BY") return (r["HOSTED BY"] || "");
       if (key === "COST") return normalizeCost(r.COST || "");
-      if (key === "DURATION") return (r.DURATION || "");
-      if (key === "GRADES") return (r.GRADES || "");
-      if (key === "URL") return (r.URL || "");
-      return String(r[key] || "");
+      return String(r[key] || "").toLowerCase();
     }
 
     function normalizeCost(s) {
-      const str = String(s || "").trim();
-      const m = str.match(/-?\d+(\.\d+)?/);
-      if (!m) return Number.POSITIVE_INFINITY;
-      return Number(m[0]);
+      const m = String(s || "").trim().match(/-?\d+(\.\d+)?/);
+      return m ? Number(m[0]) : Number.POSITIVE_INFINITY;
     }
 
     function updateSortIndicators() {
-      const pretty = (k) => ({
-        "DATE": "Date",
-        "STATE": "State",
-        "EVENT NAME": "Event",
-        "HOSTED BY": "Hosted by",
-        "COST": "Cost",
-        "DURATION": "Duration",
-        "GRADES": "Grades",
-        "URL": "Link",
-      }[k] || k);
-
       els.ths.forEach(th => {
         const key = th.getAttribute("data-key");
         const span = th.querySelector(".sort");
@@ -625,12 +626,14 @@
         span.textContent = (key === sortKey) ? (sortDir === "asc" ? "▲" : "▼") : "";
       });
 
-      const special =
-        (sortKey === "DATE") ? (sortDir === "asc" ? "Old→New" : "New→Old") :
-        (sortKey === "COST") ? (sortDir === "asc" ? "Low→High" : "High→Low") :
-        (sortDir === "asc" ? "A→Z" : "Z→A");
+      const pretty = (k) => ({
+        "DATE":"Date","STATE":"State","EVENT NAME":"Event","HOSTED BY":"Hosted by",
+        "COST":"Cost","DURATION":"Duration","GRADES":"Grades","URL":"Link"
+      }[k] || k);
 
-      els.sortLabel.textContent = `Sort: ${pretty(sortKey)} (${special})`;
+      els.sortLabel.textContent = `Sort: ${pretty(sortKey)} (${sortDir === "asc" ? "A→Z" : "Z→A"})`;
+      if (sortKey === "DATE") els.sortLabel.textContent = `Sort: Date (${sortDir === "asc" ? "Old→New" : "New→Old"})`;
+      if (sortKey === "COST") els.sortLabel.textContent = `Sort: Cost (${sortDir === "asc" ? "Low→High" : "High→Low"})`;
     }
 
     function renderCards(rows) {
@@ -648,15 +651,12 @@
                 <div class="title" title="${escapeAttr(r["EVENT NAME"])}">${escapeHtml(r["EVENT NAME"])}</div>
                 <div class="sub">${escapeHtml(r["HOSTED BY"])}</div>
               </div>
-
               <div class="stamp">
                 <div class="stampDate">${escapeHtml(formatDisplayDate(r._date))}</div>
                 <div class="stampState">${escapeHtml(r.STATE || "")}</div>
               </div>
             </div>
-
             <div class="chips">${chips}</div>
-
             <div class="actions">
               <a class="btn" href="${escapeAttr(r.URL)}" target="_blank" rel="noopener">Open</a>
               <a class="btn" href="${escapeAttr(buildCalendarLink(r))}" target="_blank" rel="noopener">Add to Calendar</a>
