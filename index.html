@@ -2,14 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- IMPORTANT: viewport-fit=cover enables safe-area insets on iOS -->
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Football Camps & Combines</title>
 
   <style>
     :root{
       --shadow: 0 6px 18px rgba(0,0,0,.08);
       --headerH: 0px;           /* set by JS */
-      --pagePad: 14px;
+      --pagePad: 16px;          /* a little more breathing room */
       --tableMinW: 860px;
     }
 
@@ -40,11 +41,16 @@
       border-bottom: 1px solid #eee;
     }
 
+    /* Safe-area aware container padding */
     .wrap{
       width: 100%;
       max-width: 1100px;
       margin: 0 auto;
-      padding: 14px;
+
+      padding-top: 14px;
+      padding-bottom: 14px;
+      padding-left: max(14px, env(safe-area-inset-left));
+      padding-right: max(14px, env(safe-area-inset-right));
     }
 
     h1{ font-size: 18px; margin: 0 0 10px; }
@@ -140,25 +146,29 @@
       white-space:nowrap;
     }
 
-    /* Main layout */
+    /* Main layout (safe-area aware padding) */
     main{
       width:100%;
       max-width:100%;
       padding: var(--pagePad);
       padding-bottom: 70px;
+
+      /* override shorthand with safe-area on left/right */
+      padding-left: max(var(--pagePad), env(safe-area-inset-left));
+      padding-right: max(var(--pagePad), env(safe-area-inset-right));
     }
 
     /* TABLE FOCUS MODE:
-       - page stops scrolling (no “table moving around”)
-       - table fills viewport height under header
+       - page stops scrolling
+       - table becomes the scroller
     */
     body.table-focus{
       height: 100vh;
-      overflow: hidden; /* IMPORTANT */
+      overflow: hidden;
     }
     body.table-focus main{
       height: calc(100vh - var(--headerH));
-      overflow: hidden; /* IMPORTANT */
+      overflow: hidden;
       padding-bottom: 14px;
     }
 
@@ -219,23 +229,22 @@
     /* Table containment */
     .tableOuter{ width:100%; max-width:100%; overflow:hidden; }
     .tableWrap{ width:100%; max-width:1100px; margin:0 auto; }
-    body.table-focus .tableWrap{ max-width: none; margin: 0; } /* use full width in focus mode */
+    body.table-focus .tableWrap{ max-width: none; margin: 0; }
 
     .tableScroll{
       background:#fff;
       border:1px solid #eee;
       border-radius:16px;
       box-shadow:var(--shadow);
-      overflow:auto;                 /* THIS is the scroll container */
+      overflow:auto;
       -webkit-overflow-scrolling:touch;
       width:100%;
       max-width:100%;
       overscroll-behavior:contain;
       contain: layout paint;
-      position: relative;            /* helps sticky in Safari */
+      position: relative;
     }
 
-    /* In table-focus mode, make it BIG (no “2 rows only”) */
     body.table-focus .tableScroll{
       height: calc(100vh - var(--headerH) - (var(--pagePad) * 2));
       max-height: none;
@@ -248,7 +257,6 @@
       }
     }
 
-    /* Sticky header reliability: separate + sticky THEAD/TH */
     table{
       width:100%;
       min-width: var(--tableMinW);
@@ -455,7 +463,6 @@
     }
 
     function syncHeaderHeightVar() {
-      // Defer to ensure layout settled (helps Safari)
       requestAnimationFrame(() => {
         const header = document.querySelector("header");
         const h = header ? header.getBoundingClientRect().height : 0;
@@ -484,7 +491,6 @@
       els.cards.classList.toggle("hidden", m !== "cards");
       els.tableWrap.classList.toggle("hidden", m !== "table");
 
-      // Table focus mode: page stops scrolling, table becomes the scroller
       document.body.classList.toggle("table-focus", m === "table");
 
       if (persist) localStorage.setItem(STORAGE_KEY_VIEW, m);
