@@ -2,15 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- IMPORTANT: viewport-fit=cover enables safe-area insets on iOS -->
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Football Camps & Combines</title>
 
   <style>
     :root{
       --shadow: 0 6px 18px rgba(0,0,0,.08);
       --headerH: 0px;           /* set by JS */
-      --pagePad: 16px;          /* a little more breathing room */
+      --pagePad: 14px;
       --tableMinW: 860px;
     }
 
@@ -41,14 +40,11 @@
       border-bottom: 1px solid #eee;
     }
 
-    /* Safe-area aware container padding */
     .wrap{
       width: 100%;
       max-width: 1100px;
       margin: 0 auto;
-
-      padding-top: 14px;
-      padding-bottom: 14px;
+      padding: 14px;
       padding-left: max(14px, env(safe-area-inset-left));
       padding-right: max(14px, env(safe-area-inset-right));
     }
@@ -146,30 +142,14 @@
       white-space:nowrap;
     }
 
-    /* Main layout (safe-area aware padding) */
+    /* Main layout */
     main{
       width:100%;
       max-width:100%;
       padding: var(--pagePad);
-      padding-bottom: 70px;
-
-      /* override shorthand with safe-area on left/right */
       padding-left: max(var(--pagePad), env(safe-area-inset-left));
       padding-right: max(var(--pagePad), env(safe-area-inset-right));
-    }
-
-    /* TABLE FOCUS MODE:
-       - page stops scrolling
-       - table becomes the scroller
-    */
-    body.table-focus{
-      height: 100vh;
-      overflow: hidden;
-    }
-    body.table-focus main{
-      height: calc(100vh - var(--headerH));
-      overflow: hidden;
-      padding-bottom: 14px;
+      padding-bottom: 70px;
     }
 
     /* Cards */
@@ -227,34 +207,31 @@
     }
 
     /* Table containment */
-    .tableOuter{ width:100%; max-width:100%; overflow:hidden; }
+    .tableOuter{ width:100%; max-width:100%; }
     .tableWrap{ width:100%; max-width:1100px; margin:0 auto; }
-    body.table-focus .tableWrap{ max-width: none; margin: 0; }
 
     .tableScroll{
       background:#fff;
       border:1px solid #eee;
       border-radius:16px;
       box-shadow:var(--shadow);
-      overflow:auto;
+      overflow:auto;                 /* scroll container */
       -webkit-overflow-scrolling:touch;
       width:100%;
       max-width:100%;
       overscroll-behavior:contain;
-      contain: layout paint;
       position: relative;
+      min-height: 240px;
+      max-height: 70vh;              /* IMPORTANT for embedded/mobile */
     }
 
-    body.table-focus .tableScroll{
-      height: calc(100vh - var(--headerH) - (var(--pagePad) * 2));
-      max-height: none;
+    @media (min-width: 900px){
+      .tableScroll{ max-height: 75vh; }
     }
 
     @media (max-width:700px){
       :root{ --tableMinW: 780px; }
-      body.table-focus .tableScroll{
-        height: calc(100vh - var(--headerH) - 18px);
-      }
+      .tableScroll{ max-height: 68vh; }
     }
 
     table{
@@ -266,11 +243,6 @@
 
     th, td{ padding:12px; border-bottom:1px solid #f0f0f0; font-size:13px; vertical-align:top; }
 
-    thead{
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
     thead th{
       position: sticky;
       top: 0;
@@ -304,8 +276,6 @@
       font-size:14px;
       font-weight:700;
     }
-
-    #sentinel{ height:1px; width:100%; max-width:1100px; margin:0 auto; }
   </style>
 </head>
 
@@ -393,14 +363,14 @@
     </div>
 
     <div class="empty hidden" id="empty">No events match your filters.</div>
-    <div id="sentinel"></div>
   </main>
 
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMvr__OkB3wgl4GvpZLJ61u_MfemESGiLBKEwufYFVwj_S7jiHFZraACGJRJogY6I29r17w34EGzVF/pub?gid=700608427&single=true&output=csv";
     const REQUIRED = ["STATE", "DATE", "EVENT NAME", "HOSTED BY", "URL"];
-    const PAGE_SIZE = 100;
     const STORAGE_KEY_VIEW = "myrecruits_view_mode";
+
+    const IN_IFRAME = (() => { try { return window.self !== window.top; } catch { return true; } })();
 
     const els = {
       q: document.getElementById("q"),
@@ -419,7 +389,6 @@
       btnCards: document.getElementById("btnCards"),
       btnTable: document.getElementById("btnTable"),
       resetBtn: document.getElementById("resetBtn"),
-      sentinel: document.getElementById("sentinel"),
       empty: document.getElementById("empty"),
       thead: document.querySelector("thead"),
       ths: Array.from(document.querySelectorAll("thead th")),
@@ -427,8 +396,6 @@
 
     let all = [];
     let filtered = [];
-    let visibleLimit = PAGE_SIZE;
-    let observer = null;
 
     let sortKey = "DATE";
     let sortDir = "asc";
@@ -436,10 +403,6 @@
     init();
 
     async function init() {
-      syncHeaderHeightVar();
-      window.addEventListener("resize", syncHeaderHeightVar);
-      window.addEventListener("orientationchange", syncHeaderHeightVar);
-
       const started = performance.now();
       const csv = await fetch(CSV_URL, { cache: "no-store" }).then(r => r.text());
       const parsed = parseCsv(csv);
@@ -458,16 +421,7 @@
       wire();
       applyDefaultView();
       updateSortIndicators();
-      render({ reset: true });
-      setupInfiniteScroll();
-    }
-
-    function syncHeaderHeightVar() {
-      requestAnimationFrame(() => {
-        const header = document.querySelector("header");
-        const h = header ? header.getBoundingClientRect().height : 0;
-        document.documentElement.style.setProperty("--headerH", `${Math.round(h)}px`);
-      });
+      render();
     }
 
     function isDesktop() {
@@ -475,7 +429,8 @@
     }
 
     function applyDefaultView() {
-      const saved = (localStorage.getItem(STORAGE_KEY_VIEW) || "").toLowerCase();
+      let saved = "";
+      try { saved = (localStorage.getItem(STORAGE_KEY_VIEW) || "").toLowerCase(); } catch {}
       const fallback = isDesktop() ? "table" : "cards";
       const mode = (saved === "cards" || saved === "table") ? saved : fallback;
       setView(mode, { persist: false });
@@ -491,35 +446,33 @@
       els.cards.classList.toggle("hidden", m !== "cards");
       els.tableWrap.classList.toggle("hidden", m !== "table");
 
-      document.body.classList.toggle("table-focus", m === "table");
+      // IMPORTANT FIX:
+      // Do NOT enable "table-focus" behavior when embedded in Squarespace (iframe),
+      // because it can collapse the table body area on mobile Safari.
+      document.body.classList.remove("table-focus");
+      // (We keep the class unused; no focus-locking in iframe.)
 
-      if (persist) localStorage.setItem(STORAGE_KEY_VIEW, m);
+      if (persist) {
+        try { localStorage.setItem(STORAGE_KEY_VIEW, m); } catch {}
+      }
 
-      syncHeaderHeightVar();
-      if (m === "table") els.tableScroll.scrollTop = 0;
-    }
-
-    function setupInfiniteScroll() {
-      if (observer) observer.disconnect();
-      observer = new IntersectionObserver((entries) => {
-        if (!entries.some(e => e.isIntersecting)) return;
-        if (visibleLimit >= filtered.length) return;
-        visibleLimit = Math.min(filtered.length, visibleLimit + PAGE_SIZE);
-        paint();
-      }, { root: null, rootMargin: "1200px 0px", threshold: 0 });
-      observer.observe(els.sentinel);
+      // Force repaint after switching views (fixes “headers only”)
+      requestAnimationFrame(() => {
+        render();
+        if (m === "table") els.tableScroll.scrollTop = 0;
+      });
     }
 
     function wire() {
-      const resetAndRender = () => render({ reset: true });
+      const rerender = () => render();
 
       ["input", "change"].forEach(evt => {
-        els.q.addEventListener(evt, resetAndRender);
-        els.state.addEventListener(evt, resetAndRender);
-        els.host.addEventListener(evt, resetAndRender);
-        els.from.addEventListener(evt, resetAndRender);
-        els.to.addEventListener(evt, resetAndRender);
-        els.upcoming.addEventListener(evt, resetAndRender);
+        els.q.addEventListener(evt, rerender);
+        els.state.addEventListener(evt, rerender);
+        els.host.addEventListener(evt, rerender);
+        els.from.addEventListener(evt, rerender);
+        els.to.addEventListener(evt, rerender);
+        els.upcoming.addEventListener(evt, rerender);
       });
 
       els.btnCards.addEventListener("click", () => setView("cards"));
@@ -536,9 +489,8 @@
         sortKey = "DATE";
         sortDir = "asc";
         updateSortIndicators();
-        render({ reset: true });
-
-        if (!els.tableWrap.classList.contains("hidden")) els.tableScroll.scrollTop = 0;
+        render();
+        els.tableScroll.scrollTop = 0;
       });
 
       els.thead.addEventListener("click", (e) => {
@@ -551,7 +503,7 @@
         else { sortKey = key; sortDir = "asc"; }
 
         updateSortIndicators();
-        render({ reset: true });
+        render();
       });
 
       els.cards.addEventListener("click", (e) => {
@@ -560,9 +512,7 @@
       });
     }
 
-    function render({ reset }) {
-      if (reset) visibleLimit = PAGE_SIZE;
-
+    function render() {
       const q = (els.q.value || "").trim().toLowerCase();
       const state = els.state.value;
       const host = els.host.value;
@@ -591,15 +541,12 @@
       });
 
       sortRows(filtered);
-      paint();
-    }
 
-    function paint() {
-      const slice = filtered.slice(0, visibleLimit);
-      els.count.textContent = `Showing ${slice.length} of ${filtered.length} event(s)`;
+      els.count.textContent = `Showing ${filtered.length} of ${filtered.length} event(s)`;
       els.empty.classList.toggle("hidden", filtered.length !== 0);
-      renderCards(slice);
-      renderTable(slice);
+
+      renderCards(filtered);
+      renderTable(filtered);
     }
 
     function sortRows(rows) {
