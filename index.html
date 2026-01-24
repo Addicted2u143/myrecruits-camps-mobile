@@ -436,25 +436,28 @@
       setView(mode, { persist: false });
     }
 
-    function setView(mode, opts = { persist: true }) {
-      const m = mode === "table" ? "table" : "cards";
-      const persist = opts.persist !== false;
+   function setView(mode, opts = { persist: true }) {
+  const m = mode === "table" ? "table" : "cards";
+  const persist = opts.persist !== false;
 
-      els.btnCards.classList.toggle("active", m === "cards");
-      els.btnTable.classList.toggle("active", m === "table");
+  els.btnCards.classList.toggle("active", m === "cards");
+  els.btnTable.classList.toggle("active", m === "table");
 
-      els.cards.classList.toggle("hidden", m !== "cards");
-      els.tableWrap.classList.toggle("hidden", m !== "table");
+  els.cards.classList.toggle("hidden", m !== "cards");
+  els.tableWrap.classList.toggle("hidden", m !== "table");
 
-      // IMPORTANT FIX:
-      // Do NOT enable "table-focus" behavior when embedded in Squarespace (iframe),
-      // because it can collapse the table body area on mobile Safari.
-      document.body.classList.remove("table-focus");
-      // (We keep the class unused; no focus-locking in iframe.)
+  // ✅ Only lock scrolling / “focus mode” on desktop
+  const focus = (m === "table" && isDesktop());
+  document.body.classList.toggle("table-focus", focus);
 
-      if (persist) {
-        try { localStorage.setItem(STORAGE_KEY_VIEW, m); } catch {}
-      }
+  if (persist) {
+    try { localStorage.setItem(STORAGE_KEY_VIEW, m); } catch (e) {}
+  }
+
+  syncHeaderHeightVar();
+  if (m === "table") els.tableScroll.scrollTop = 0;
+}
+
 
       // Force repaint after switching views (fixes “headers only”)
       requestAnimationFrame(() => {
