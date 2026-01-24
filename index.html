@@ -8,7 +8,7 @@
   <style>
     :root{
       --shadow: 0 6px 18px rgba(0,0,0,.08);
-      --headerH: 0px;           /* set by JS */
+      --headerH: 0px;
       --pagePad: 14px;
       --tableMinW: 860px;
     }
@@ -50,25 +50,6 @@
 
     h1{ font-size: 18px; margin: 0 0 10px; }
 
-    /* Error banner */
-    .error{
-      width: 100%;
-      max-width: 1100px;
-      margin: 12px auto 0;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px solid #ffd0d0;
-      background: #fff3f3;
-      color: #7a0000;
-      box-shadow: var(--shadow);
-      font-size: 13px;
-      font-weight: 700;
-      line-height: 1.35;
-    }
-    .error small{ display:block; margin-top:6px; font-weight: 600; color:#8a2b2b; }
-    .error code{ font-weight: 800; }
-
-    /* Controls */
     .controls{ display: grid; gap: 10px; align-items: end; width: 100%; }
     .controls > *{ min-width: 0; }
     .controls label{ display:block; font-size:12px; color:#444; margin-bottom:6px; }
@@ -178,7 +159,19 @@
       padding-bottom: 14px;
     }
 
-    /* Cards */
+    .error{
+      width:100%;
+      max-width:1100px;
+      margin: 12px auto 0;
+      padding: 12px 14px;
+      background: #fff3f3;
+      border: 1px solid #ffd0d0;
+      border-radius: 14px;
+      color:#7a0000;
+      font-weight:800;
+      box-shadow: var(--shadow);
+    }
+
     .grid{ width:100%; max-width:1100px; margin:0 auto; display:grid; grid-template-columns:1fr; gap:12px; }
     .card{ background:#fff; border:1px solid #eee; border-radius:16px; box-shadow:var(--shadow); padding:14px; width:100%; }
     .row1{ display:flex; justify-content:space-between; gap:10px; align-items:start; }
@@ -232,7 +225,6 @@
       font-size:14px;
     }
 
-    /* Table containment */
     .tableOuter{ width:100%; max-width:100%; overflow:hidden; }
     .tableWrap{ width:100%; max-width:1100px; margin:0 auto; }
     body.table-focus .tableWrap{ max-width: none; margin: 0; }
@@ -272,11 +264,7 @@
 
     th, td{ padding:12px; border-bottom:1px solid #f0f0f0; font-size:13px; vertical-align:top; }
 
-    thead{
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
+    thead{ position: sticky; top: 0; z-index: 10; }
     thead th{
       position: sticky;
       top: 0;
@@ -319,8 +307,6 @@
   <header>
     <div class="wrap">
       <h1>Football Camps / Combines / Junior Days</h1>
-
-      <div id="error" class="error hidden"></div>
 
       <div class="controls">
         <div>
@@ -376,6 +362,8 @@
   </header>
 
   <main>
+    <div id="error" class="error hidden"></div>
+
     <div class="grid" id="cards"></div>
 
     <div class="tableOuter">
@@ -386,8 +374,8 @@
               <tr>
                 <th data-key="DATE" style="width:150px;">Date <span class="sort"></span></th>
                 <th data-key="STATE" style="width:70px;">State <span class="sort"></span></th>
-                <th data-key="EVENT NAME">Event <span class="sort"></span></th>
-                <th data-key="HOSTED BY" style="width:240px;">Hosted by <span class="sort"></span></th>
+                <th data-key="EVENT">Event <span class="sort"></span></th>
+                <th data-key="HOST" style="width:240px;">Hosted by <span class="sort"></span></th>
                 <th data-key="COST" style="width:120px;">Cost <span class="sort"></span></th>
                 <th data-key="DURATION" style="width:120px;">Duration <span class="sort"></span></th>
                 <th data-key="GRADES" style="width:170px;">Grades <span class="sort"></span></th>
@@ -406,21 +394,8 @@
 
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMvr__OkB3wgl4GvpZLJ61u_MfemESGiLBKEwufYFVwj_S7jiHFZraACGJRJogY6I29r17w34EGzVF/pub?gid=700608427&single=true&output=csv";
-
-    const REQUIRED = ["STATE", "DATE", "EVENT NAME", "HOSTED BY", "URL"];
     const PAGE_SIZE = 100;
     const STORAGE_KEY_VIEW = "myrecruits_view_mode";
-
-    const ALIASES = {
-      "STATE": ["STATE","ST"],
-      "DATE": ["DATE","EVENT DATE","START DATE"],
-      "EVENT NAME": ["EVENT NAME","EVENT","CAMP","NAME","EVENT_TITLE","EVENT TITLE"],
-      "HOSTED BY": ["HOSTED BY","HOST","HOSTEDBY","SCHOOL","ORGANIZATION","ORGANISATION"],
-      "URL": ["URL","LINK","WEBSITE","REGISTRATION","REGISTER","REGISTRATION URL"],
-      "COST": ["COST","PRICE","FEE"],
-      "DURATION": ["DURATION","LENGTH"],
-      "GRADES": ["GRADES","GRADES/AGE","GRADES AGE","AGE","AGES"]
-    };
 
     const els = {
       q: document.getElementById("q"),
@@ -441,9 +416,9 @@
       resetBtn: document.getElementById("resetBtn"),
       sentinel: document.getElementById("sentinel"),
       empty: document.getElementById("empty"),
+      error: document.getElementById("error"),
       thead: document.querySelector("thead"),
       ths: Array.from(document.querySelectorAll("thead th")),
-      error: document.getElementById("error"),
     };
 
     let all = [];
@@ -454,106 +429,98 @@
     let sortKey = "DATE";
     let sortDir = "asc";
 
-    init();
+    init().catch(showFatal);
 
     async function init() {
-      try {
-        syncHeaderHeightVar();
-        window.addEventListener("resize", syncHeaderHeightVar);
-        window.addEventListener("orientationchange", syncHeaderHeightVar);
+      syncHeaderHeightVar();
+      window.addEventListener("resize", syncHeaderHeightVar);
+      window.addEventListener("orientationchange", syncHeaderHeightVar);
 
-        const started = performance.now();
+      const started = performance.now();
+      const csv = await fetch(CSV_URL, { cache: "no-store" }).then(r => {
+        if (!r.ok) throw new Error("CSV fetch failed: " + r.status);
+        return r.text();
+      });
 
-        const csv = await fetchTextWithTimeout(CSV_URL, 15000);
-        const parsed = parseCsv(csv);
-        const idx = buildHeaderIndex(parsed.headers);
+      const parsed = parseCsv(csv);
+      const map = buildHeaderMap(parsed.headers);
 
-        all = parsed.rows
-          .map(row => rowFromIndex(idx, row))
-          .map(r => normalizeRow(r))
-          .filter(r => r.URL && r["EVENT NAME"] && r._date instanceof Date && !isNaN(r._date.getTime()));
+      // Require the truly essential columns (with aliases)
+      const missing = [];
+      if (map.STATE < 0) missing.push("STATE");
+      if (map.DATE < 0) missing.push("DATE");
+      if (map.EVENT < 0) missing.push("EVENT NAME");
+      if (map.URL < 0) missing.push("URL/LINK");
 
-        hydrateFilters(all);
-
-        const ms = Math.round(performance.now() - started);
-        els.updated.textContent = `Loaded ${all.length} events • ${ms}ms`;
-
-        // If there are zero upcoming events, auto-show all (prevents “looks broken”)
-        const today = startOfDay(new Date());
-        const hasUpcoming = all.some(r => r._date >= today);
-        if (!hasUpcoming) els.upcoming.checked = false;
-
-        wire();
-        applyDefaultView();
-        updateSortIndicators();
-        render({ reset: true });
-        setupInfiniteScroll();
-      } catch (err) {
-        showError(err);
-        // Still wire UI so page isn’t “dead”
-        wire();
-        applyDefaultView();
+      if (missing.length) {
+        throw new Error("Spreadsheet columns missing or renamed: " + missing.join(", "));
       }
+
+      all = parsed.rows
+        .map(r => rowObj(map, r))
+        .map(r => normalizeRow(r))
+        .filter(r => r.URL && r.EVENT && r._date instanceof Date && !isNaN(r._date.getTime()));
+
+      hydrateFilters(all);
+
+      const ms = Math.round(performance.now() - started);
+      els.updated.textContent = `Loaded ${all.length} events • ${ms}ms`;
+
+      wire();
+      applyDefaultView();
+      updateSortIndicators();
+      render({ reset: true });
+      setupInfiniteScroll();
     }
 
-    async function fetchTextWithTimeout(url, ms) {
-      const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), ms);
-      let res;
-      try {
-        res = await fetch(url, { cache: "no-store", signal: controller.signal });
-      } finally {
-        clearTimeout(t);
-      }
-      if (!res || !res.ok) throw new Error(`CSV request failed. (${res ? res.status : "no response"})`);
-      const text = await res.text();
-      if (!text || text.length < 10) throw new Error("CSV response is empty.");
-
-      // quick sanity check: if Google returns HTML/login, this catches it
-      const looksLikeHtml = /^\s*</.test(text) && /<html/i.test(text);
-      if (looksLikeHtml) {
-        throw new Error("Google returned HTML (not CSV). Make sure the Sheet is PUBLISHED to the web and the CSV link is public.");
-      }
-      return text;
-    }
-
-    function showError(err) {
-      const msg = (err && err.message) ? err.message : String(err);
+    function showFatal(err){
+      console.error(err);
+      els.error.textContent =
+        "The camps table couldn’t load. Usually this means the Google Sheet column names were changed. " +
+        "Fix the sheet headers or update the app. Error: " + (err && err.message ? err.message : String(err));
       els.error.classList.remove("hidden");
-      els.error.innerHTML =
-        `Couldn't load camp data.<br>` +
-        `<code>${escapeHtml(msg)}</code>` +
-        `<small>Fix: Google Sheet → File → Share → Publish to web (CSV must be public). Then refresh.</small>`;
-      els.count.textContent = "Data load failed";
-      els.updated.textContent = "";
+      els.count.textContent = "Load failed";
+      // still wire UI so page isn't “dead”
+      wire();
+      applyDefaultView();
     }
 
-    function canon(s){ return String(s || "").trim().toUpperCase(); }
-
-    function buildHeaderIndex(headers) {
-      const upper = headers.map(canon);
-
-      const out = {};
-      for (const [key, list] of Object.entries(ALIASES)) {
-        const idx = upper.findIndex(h => list.includes(h));
-        if (idx >= 0) out[key] = idx;
-      }
-
-      for (const req of REQUIRED) {
-        if (!(req in out)) {
-          throw new Error(`Missing required column: ${req}. Found: ${upper.join(", ")}`);
+    function buildHeaderMap(headers){
+      const norm = headers.map(h => String(h || "").trim().toUpperCase());
+      const idx = (aliases) => {
+        for (const a of aliases){
+          const i = norm.indexOf(a);
+          if (i >= 0) return i;
         }
-      }
-      return out;
+        return -1;
+      };
+
+      return {
+        STATE: idx(["STATE","ST"]),
+        DATE: idx(["DATE","EVENT DATE"]),
+        EVENT: idx(["EVENT NAME","EVENT","CAMP NAME","NAME"]),
+        HOST: idx(["HOSTED BY","HOST","HOST SCHOOL","SCHOOL"]),
+        URL: idx(["URL","LINK","REGISTRATION LINK","REGISTER","WEBSITE"]),
+        COST: idx(["COST","PRICE","FEE"]),
+        DURATION: idx(["DURATION","LENGTH"]),
+        GRADES: idx(["GRADES/AGE","GRADES","AGE","GRADES AGE"]),
+        APPROVED: idx(["APPROVED","APPROVAL"])
+      };
     }
 
-    function rowFromIndex(indexMap, row) {
-      const obj = {};
-      for (const key of Object.keys(ALIASES)) {
-        const idx = indexMap[key];
-        obj[key] = (idx == null) ? "" : (row[idx] ?? "");
-      }
-      return obj;
+    function rowObj(map, row) {
+      const get = (i) => (i >= 0 ? (row[i] ?? "") : "");
+      return {
+        STATE: get(map.STATE),
+        DATE: get(map.DATE),
+        EVENT: get(map.EVENT),
+        HOST: get(map.HOST),
+        URL: get(map.URL),
+        COST: get(map.COST),
+        DURATION: get(map.DURATION),
+        GRADES: get(map.GRADES),
+        APPROVED: get(map.APPROVED),
+      };
     }
 
     function syncHeaderHeightVar() {
@@ -655,7 +622,7 @@
     }
 
     function render({ reset }) {
-      if (!all.length) return;
+      if (!all.length) return; // if load failed
       if (reset) visibleLimit = PAGE_SIZE;
 
       const q = (els.q.value || "").trim().toLowerCase();
@@ -669,19 +636,19 @@
       filtered = all.filter(r => {
         if (upcomingOnly && r._date < today) return false;
         if (state && r.STATE !== state) return false;
-        if (host && r["HOSTED BY"] !== host) return false;
+        if (host && r.HOST !== host) return false;
         if (from && r._date < from) return false;
         if (to && r._date > to) return false;
 
         if (q) {
           const blob = [
-            r.STATE, r.DATE, r["EVENT NAME"], r["HOSTED BY"], r.URL,
+            r.STATE, r.DATE, r.EVENT, r.HOST, r.URL,
             r.COST || "", r.DURATION || "", r.GRADES || ""
           ].join(" ").toLowerCase();
           if (!blob.includes(q)) return false;
         }
 
-        if ("APPROVED" in r && r.APPROVED !== true) return false;
+        if (r.APPROVED !== null && r.APPROVED !== true) return false;
         return true;
       });
 
@@ -728,7 +695,7 @@
       });
 
       const pretty = (k) => ({
-        "DATE":"Date","STATE":"State","EVENT NAME":"Event","HOSTED BY":"Hosted by",
+        "DATE":"Date","STATE":"State","EVENT":"Event","HOST":"Hosted by",
         "COST":"Cost","DURATION":"Duration","GRADES":"Grades","URL":"Link"
       }[k] || k);
 
@@ -749,8 +716,8 @@
           <div class="card">
             <div class="row1">
               <div class="left">
-                <div class="title" title="${escapeAttr(r["EVENT NAME"])}">${escapeHtml(r["EVENT NAME"])}</div>
-                <div class="sub">${escapeHtml(r["HOSTED BY"])}</div>
+                <div class="title" title="${escapeAttr(r.EVENT)}">${escapeHtml(r.EVENT)}</div>
+                <div class="sub">${escapeHtml(r.HOST || "")}</div>
               </div>
               <div class="stamp">
                 <div class="stampDate">${escapeHtml(formatDisplayDate(r._date))}</div>
@@ -772,8 +739,8 @@
         <tr>
           <td>${escapeHtml(formatDisplayDate(r._date))}</td>
           <td>${escapeHtml(r.STATE || "")}</td>
-          <td>${escapeHtml(r["EVENT NAME"])}</td>
-          <td>${escapeHtml(r["HOSTED BY"])}</td>
+          <td>${escapeHtml(r.EVENT || "")}</td>
+          <td>${escapeHtml(r.HOST || "")}</td>
           <td>${escapeHtml(r.COST || "")}</td>
           <td>${escapeHtml(r.DURATION || "")}</td>
           <td>${escapeHtml(r.GRADES || "")}</td>
@@ -787,7 +754,7 @@
       const hosts = new Set();
       rows.forEach(r => {
         if (r.STATE) states.add(r.STATE);
-        if (r["HOSTED BY"]) hosts.add(r["HOSTED BY"]);
+        if (r.HOST) hosts.add(r.HOST);
       });
       setOptions(els.state, [...states].sort());
       setOptions(els.host, [...hosts].sort());
@@ -802,8 +769,8 @@
     function normalizeRow(r) {
       const out = {};
       out.STATE = String(r.STATE || "").trim().toUpperCase();
-      out["EVENT NAME"] = String(r["EVENT NAME"] || "").trim();
-      out["HOSTED BY"] = String(r["HOSTED BY"] || "").trim();
+      out.EVENT = String(r.EVENT || "").trim();
+      out.HOST = String(r.HOST || "").trim();
       out.URL = String(r.URL || "").trim();
 
       out.DATE = toISODate(r.DATE);
@@ -811,7 +778,9 @@
       out.DURATION = String(r.DURATION || "").trim();
       out.COST = String(r.COST || "").trim();
 
-      if ("APPROVED" in r) {
+      // APPROVED optional
+      if (String(r.APPROVED || "").trim() === "") out.APPROVED = null;
+      else {
         const v = String(r.APPROVED || "").trim().toLowerCase();
         out.APPROVED = (v === "true" || v === "yes" || v === "y" || v === "1");
       }
@@ -889,8 +858,8 @@
       };
 
       const dates = `${fmt(start)}/${fmt(end)}`;
-      const text = encodeURIComponent(r["EVENT NAME"]);
-      const details = encodeURIComponent(`${r["HOSTED BY"]}\n${r.URL}`);
+      const text = encodeURIComponent(r.EVENT);
+      const details = encodeURIComponent(`${r.HOST}\n${r.URL}`);
       const loc = encodeURIComponent(r.STATE || "");
       return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${loc}`;
     }
