@@ -765,6 +765,10 @@
       return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${loc}`;
     }
 
+    @media (max-width:700px){
+  .tableScroll{ contain: none; }
+}
+
     function escapeHtml(s) {
       return String(s ?? "")
         .replaceAll("&", "&amp;")
