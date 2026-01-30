@@ -7,16 +7,19 @@
 
   <style>
     :root{
-      --accent: #dc2626; /* matches Tailwind red-600 */
-      --bg: #f3f4f6;     /* gray-100-ish */
-      --text: #111827;   /* gray-900-ish */
-      --muted: #6b7280;  /* gray-500-ish */
-      --card: #ffffff;
-      --border: #e5e7eb;
-      --shadow: 0 6px 18px rgba(0,0,0,.08);
+      --shadow: 0 10px 24px rgba(0,0,0,.08);
+      --pagePad: 14px;
 
-      --pagePad: 16px;
-      --tableMinW: 920px;
+      /* College Database red: tailwind red-600 with ~90% opacity */
+      --accent: rgba(220, 38, 38, 0.9);
+
+      --bg: #f3f4f6;         /* gray-100-ish */
+      --text: #111827;       /* gray-900 */
+      --muted: #6b7280;      /* gray-500 */
+      --border: rgba(0,0,0,.10);
+
+      /* wider table so mobile can side-scroll */
+      --tableMinW: 980px;
     }
 
     *{ box-sizing: border-box; }
@@ -27,26 +30,25 @@
       background: var(--bg);
       color: var(--text);
       margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     }
 
-    a{ color: inherit; }
+    /* IMPORTANT FOR IFRAME + iOS:
+       Do NOT force overflow hidden on body/html, it can kill scrolling inside iframes on mobile */
+    body{ overflow-x: hidden; }
 
-    /* Header */
     header{
       position: sticky;
       top: 0;
       z-index: 50;
       background: rgba(243,244,246,.92);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(229,231,235,.8);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(0,0,0,.06);
     }
 
     .wrap{
       width: 100%;
-      max-width: 1152px;
+      max-width: 1100px;
       margin: 0 auto;
       padding: 16px;
       padding-left: max(16px, env(safe-area-inset-left));
@@ -59,17 +61,18 @@
       align-items:center;
       text-align:center;
       gap: 10px;
-      padding-top: 8px;
-      padding-bottom: 10px;
+      padding-top: 4px;
+      padding-bottom: 4px;
     }
 
     .brand img{
-      height: 44px;
+      height: 56px;
       width: auto;
       display:block;
+      object-fit: contain;
     }
 
-    .brand h1{
+    h1{
       margin: 0;
       font-weight: 900;
       letter-spacing: -0.02em;
@@ -77,50 +80,51 @@
       font-size: 36px;
     }
 
-    .brand .line{
-      width: min(980px, 92%);
-      height: 4px;
+    .accentLine{
+      margin-top: 8px;
+      height: 6px;
+      width: min(680px, 100%);
       border-radius: 999px;
-      background: color-mix(in srgb, var(--accent) 90%, transparent);
-      margin-top: 6px;
+      background: var(--accent);
     }
 
-    @media (min-width: 900px){
-      .brand h1{ font-size: 54px; }
-      .brand img{ height: 52px; }
+    @media (max-width: 700px){
+      .brand img{ height: 44px; }
+      h1{ font-size: 30px; }
+      .accentLine{ height: 5px; }
     }
 
-    /* Controls */
     .controls{
       display: grid;
       gap: 10px;
       align-items: end;
       width: 100%;
-      margin-top: 10px;
+      margin-top: 14px;
     }
     .controls > *{ min-width: 0; }
 
     .controls label{
       display:block;
       font-size:12px;
+      color: var(--muted);
       font-weight: 800;
-      color:#374151;
       margin-bottom:6px;
     }
 
     .controls input, .controls select{
       width: 100%;
       padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,.12);
+      border-radius: 14px;
       background: #fff;
       font-size: 14px;
       min-width: 0;
       outline: none;
     }
+
     .controls input:focus, .controls select:focus{
-      border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+      border-color: rgba(220,38,38,.35);
+      box-shadow: 0 0 0 4px rgba(220,38,38,.12);
     }
 
     @media (min-width: 1100px){
@@ -136,26 +140,25 @@
       align-items:center;
       gap:10px;
       padding:10px 12px;
-      border:1px solid var(--border);
+      border:1px solid rgba(0,0,0,.12);
       border-radius:999px;
       background:#fff;
       font-size:14px;
       width:100%;
       user-select:none;
       font-weight: 800;
-      color:#111;
     }
-    .pill input{ width:18px; height:18px; flex:0 0 auto; accent-color: var(--accent); }
+    .pill input{ width:18px; height:18px; flex:0 0 auto; }
 
     .metaRow{
       display:grid;
       grid-template-columns: 1fr auto;
       gap:10px;
-      margin-top:12px;
+      margin-top:10px;
       align-items:center;
       width:100%;
     }
-    @media (max-width:760px){
+    @media (max-width:700px){
       .metaRow{ grid-template-columns: 1fr; }
       .actionsRow{ justify-content:flex-start; }
     }
@@ -165,16 +168,15 @@
       gap:10px;
       flex-wrap:wrap;
       font-size:12px;
-      color: var(--muted);
+      color:#555;
     }
     .badge{
-      padding:6px 10px;
+      padding:8px 12px;
       border-radius:999px;
       background:#fff;
-      border:1px solid var(--border);
-      box-shadow: 0 2px 10px rgba(0,0,0,.04);
-      font-weight: 800;
-      color:#374151;
+      border:1px solid rgba(0,0,0,.08);
+      box-shadow: 0 8px 18px rgba(0,0,0,.06);
+      font-weight: 900;
     }
 
     .actionsRow{
@@ -187,38 +189,35 @@
 
     .viewToggle{
       display:inline-flex;
-      border:1px solid var(--border);
+      border:1px solid rgba(0,0,0,.12);
       border-radius:999px;
       overflow:hidden;
       background:#fff;
       max-width:100%;
-      box-shadow: 0 2px 10px rgba(0,0,0,.04);
+      box-shadow: 0 8px 18px rgba(0,0,0,.06);
     }
     .viewToggle button{
       border:0;
       background:transparent;
-      padding:8px 14px;
+      padding:9px 14px;
       font-weight: 900;
       font-size:12px;
       cursor:pointer;
-      color:#374151;
+      color:#333;
       white-space:nowrap;
     }
-    .viewToggle button.active{
-      background:#111827;
-      color:#fff;
-    }
+    .viewToggle button.active{ background:#111; color:#fff; }
 
     .resetBtn{
-      border:1px solid var(--border);
+      border:1px solid rgba(0,0,0,.12);
       background:#fff;
-      padding:8px 14px;
-      border-radius:12px;
+      padding:9px 14px;
+      border-radius:14px;
       font-weight: 900;
       font-size:12px;
       cursor:pointer;
       white-space:nowrap;
-      box-shadow: 0 2px 10px rgba(0,0,0,.04);
+      box-shadow: 0 8px 18px rgba(0,0,0,.06);
     }
 
     main{
@@ -227,12 +226,12 @@
       padding: var(--pagePad);
       padding-left: max(var(--pagePad), env(safe-area-inset-left));
       padding-right: max(var(--pagePad), env(safe-area-inset-right));
-      padding-bottom: 80px;
+      padding-bottom: 70px;
     }
 
     .error{
       width:100%;
-      max-width:1152px;
+      max-width:1100px;
       margin: 12px auto 0;
       padding: 12px 14px;
       background: #fff3f3;
@@ -246,26 +245,28 @@
     /* Cards */
     .grid{
       width:100%;
-      max-width:1152px;
-      margin: 0 auto;
+      max-width:1100px;
+      margin:0 auto;
       display:grid;
-      grid-template-columns: 1fr;
+      grid-template-columns:1fr;
       gap:12px;
     }
+
     .card{
-      background: var(--card);
-      border:1px solid var(--border);
-      border-radius: 18px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:18px;
       box-shadow: var(--shadow);
-      padding: 14px;
+      padding:14px;
       width:100%;
     }
-    .row1{ display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+
+    .row1{ display:flex; justify-content:space-between; gap:10px; align-items:start; }
     .left{ min-width:0; }
 
     .title{
       font-size:16px;
-      font-weight: 900;
+      font-weight:900;
       margin:0 0 6px;
       line-height:1.2;
       display:-webkit-box;
@@ -276,7 +277,8 @@
       cursor:pointer;
     }
     .title.expanded{ display:block; -webkit-line-clamp:unset; }
-    .sub{ font-size:13px; color:#374151; margin:0; font-weight: 700; }
+
+    .sub{ font-size:13px; color: #374151; margin:0; font-weight: 700; }
 
     .stamp{
       display:inline-flex;
@@ -284,73 +286,73 @@
       align-items:flex-end;
       gap:4px;
       padding:10px 12px;
-      border-radius: 16px;
-      border:1px solid var(--border);
-      background:#f9fafb;
+      border-radius:14px;
+      border:1px solid rgba(0,0,0,.08);
+      background:#fbfbfb;
       min-width:132px;
       max-width:170px;
       flex:0 0 auto;
     }
-    .stampDate{ font-weight: 900; font-size:14px; line-height:1.1; text-align:right; }
-    .stampState{ font-size:12px; color:#6b7280; font-weight: 900; letter-spacing:.02em; }
+    .stampDate{ font-weight:900; font-size:14px; line-height:1.1; text-align:right; }
+    .stampState{ font-size:12px; color:#6b7280; font-weight:900; letter-spacing:.02em; }
 
     .chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
     .chip{
       font-size:12px;
       padding:6px 10px;
       border-radius:999px;
-      background:#f3f4f6;
-      border:1px solid #e5e7eb;
+      background:#f6f6f6;
+      border:1px solid rgba(0,0,0,.06);
       white-space:nowrap;
-      color:#374151;
       font-weight: 800;
+      color:#374151;
     }
 
     .actions{ margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; }
 
-    /* Match “College Database” black pill buttons */
+    /* Match College Database button vibe */
     .btn{
       display:inline-flex;
       justify-content:center;
       align-items:center;
       padding:10px 14px;
-      border-radius: 14px;
-      border:1px solid #111827;
-      background:#111827;
+      border-radius:14px;
+      border:1px solid rgba(0,0,0,.12);
+      background:#111;
       text-decoration:none;
       color:#fff;
       font-weight: 900;
       font-size:14px;
-      box-shadow: 0 6px 16px rgba(0,0,0,.12);
     }
     .btn.secondary{
       background:#fff;
-      color:#111827;
-      border-color: var(--border);
-      box-shadow: 0 2px 10px rgba(0,0,0,.04);
+      color:#111;
     }
 
-    /* Table */
+    /* TABLE */
     .tableOuter{ width:100%; max-width:100%; }
-    .tableWrap{ width:100%; max-width:1152px; margin:0 auto; }
+    .tableWrap{ width:100%; max-width:1100px; margin:0 auto; }
 
-    /* IMPORTANT: keep page scrollable; only the table scrolls horizontally */
+    /* Key: allow horizontal + vertical scroll inside iframe on iOS */
     .tableScroll{
       background:#fff;
-      border:1px solid var(--border);
-      border-radius: 18px;
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:18px;
       box-shadow: var(--shadow);
-
-      overflow-x: auto;
-      overflow-y: auto;
+      overflow: auto;
       -webkit-overflow-scrolling: touch;
-
       width:100%;
       max-width:100%;
-      position: relative;
-
-      /* helps iOS allow sideways pan */
       touch-action: pan-x pan-y;
+      overscroll-behavior: contain;
+    }
+
+    /* give it a usable height but don't lock the whole page */
+    .tableScroll{
+      max-height: min(72vh, 720px);
+    }
+    @media (max-width:700px){
+      .tableScroll{ max-height: min(75vh, 700px); }
     }
 
     table{
@@ -362,18 +364,17 @@
 
     th, td{
       padding:12px;
-      border-bottom:1px solid #f0f0f0;
+      border-bottom:1px solid rgba(0,0,0,.06);
       font-size:13px;
       vertical-align:top;
-      color:#111827;
     }
 
     thead th{
       position: sticky;
       top: 0;
       z-index: 11;
-      background:#f9fafb;
-      border-bottom:1px solid var(--border);
+      background:#fbfbfb;
+      border-bottom:1px solid rgba(0,0,0,.08);
       text-align:left;
       font-size:12px;
       color:#374151;
@@ -382,42 +383,30 @@
       white-space:nowrap;
       font-weight: 900;
     }
-
-    thead th .sort{ font-weight:900; margin-left:6px; opacity:.6; font-size:12px; }
+    thead th .sort{ font-weight: 900; margin-left:6px; opacity:.6; font-size:12px; }
 
     tr:hover td{ background:#fcfcfc; }
 
-    /* Make links obvious like College Database */
-    td a{
-      color: color-mix(in srgb, var(--accent) 85%, #111827);
-      font-weight: 900;
-      text-decoration: none;
-    }
-    td a:hover{ text-decoration: underline; }
+    a{ color: inherit; font-weight: 900; }
+    a:hover{ color: rgba(220,38,38,.95); }
 
     .hidden{ display:none !important; }
 
     .empty{
       width:100%;
-      max-width:1152px;
+      max-width:1100px;
       margin:14px auto 0;
       padding:14px;
       background:#fff;
-      border:1px solid var(--border);
+      border:1px solid rgba(0,0,0,.08);
       border-radius:18px;
       box-shadow: var(--shadow);
       color:#374151;
       font-size:14px;
-      font-weight: 900;
+      font-weight:900;
     }
 
-    #sentinel{ height:1px; width:100%; max-width:1152px; margin:0 auto; }
-
-    @media (max-width:760px){
-      :root{ --tableMinW: 980px; } /* force horizontal scroll on mobile */
-      .brand h1{ font-size: 34px; }
-      .brand img{ height: 42px; }
-    }
+    #sentinel{ height:1px; width:100%; max-width:1100px; margin:0 auto; }
   </style>
 </head>
 
@@ -426,8 +415,10 @@
     <div class="wrap">
       <div class="brand">
         <img src="https://colleges.myrecruits.org/logo-black.png" alt="My Recruits" />
-        <h1>Camps &amp; Combines</h1>
-        <div class="line"></div>
+        <div>
+          <h1>Camps &amp; Combines</h1>
+          <div class="accentLine"></div>
+        </div>
       </div>
 
       <div class="controls">
@@ -517,7 +508,7 @@
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTMvr__OkB3wgl4GvpZLJ61u_MfemESGiLBKEwufYFVwj_S7jiHFZraACGJRJogY6I29r17w34EGzVF/pub?gid=700608427&single=true&output=csv";
     const PAGE_SIZE = 100;
-    const STORAGE_KEY_VIEW = "myrecruits_view_mode_camps";
+    const STORAGE_KEY_VIEW = "myrecruits_view_mode";
 
     const els = {
       q: document.getElementById("q"),
@@ -660,8 +651,8 @@
       if (persist) localStorage.setItem(STORAGE_KEY_VIEW, m);
 
       if (m === "table") {
-        // helpful on mobile: jump to table but keep page scrollable
-        requestAnimationFrame(() => els.tableWrap.scrollIntoView({ block: "start", behavior: "smooth" }));
+        // nudge iOS to “realize” the scroll container exists
+        requestAnimationFrame(() => { els.tableScroll.scrollLeft = 0; });
       }
     }
 
@@ -703,6 +694,7 @@
         sortDir = "asc";
         updateSortIndicators();
         render({ reset: true });
+        if (!els.tableWrap.classList.contains("hidden")) els.tableScroll.scrollTop = 0;
       });
 
       els.thead.addEventListener("click", (e) => {
